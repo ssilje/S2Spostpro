@@ -16,7 +16,6 @@ import S2S.handle_datetime   as dt
 class Hindcast:
     """
     Loads hindcast from S2S database, computes weekly means and then provides
-
         self.data:      the absolute values of the hindcast (xarray.DataArray)
         self.data_a:    the anomlies of the data relative to model climatology
                         (xarray.DataArray)
@@ -24,9 +23,7 @@ class Hindcast:
                         (xarray.DataArray)
         self.std:       the model std climatology (over 30-day running window)
                         (xarray.DataArray)
-
     Arguments to __init__
-
         var:        the name of the variable, should correspond to filenames in
                     the S2S database (string)
         t_start:    start time of files to load (tuple of int; (year,monty,day))
@@ -55,6 +52,8 @@ class Hindcast:
                     (list of tuples of int; [(year,monty,day),(year,monty,day)])
                     Useful if the the observational period is shorter than the
                     hindcast period. Default is None.
+        cross_val   If True, uses cross validatio nin the computation of
+                    model climatology. Default is False.
     """
     def __init__(
                     self,
@@ -81,7 +80,7 @@ class Hindcast:
         self.process        = process
         self.path           = config['VALID_DB']
         self.period         = period
-        self.cross_val      = cross_val
+        self.cross_val      = cross_val #new attribute
 
         filename_absolute = self.filename_func('absolute')
 
@@ -184,8 +183,8 @@ class Hindcast:
 
             print('\tCompute model climatology')
             self.mean,self.std = xh.c_climatology(
-                                            self.data,
-                                            cross_validation = self.cross_val
+                                    self.data,
+                                    cross_validation = self.cross_val #new
                                                 )
 
             self.mean = self.mean.rename(self.var)
@@ -204,14 +203,49 @@ class Hindcast:
 
     def load_data(self):
 
-        data = ECMWF_S2SH(high_res=self.high_res)\
-                        .load(
-                                self.var,
-                                self.t_start,
-                                self.t_end,
-                                self.bounds,
-                                self.download
-                            )[self.var]
+        # hardcoded option for absolute wind that we should consider redoing
+        if self.var=='U10':
+
+            data_u = ECMWF_S2SH(high_res=self.high_res)\
+                            .load(
+                                    'u10',
+                                    self.t_start,
+                                    self.t_end,
+                                    self.bounds,
+                                    self.download
+                                )['u10']
+
+            data_v = ECMWF_S2SH(high_res=self.high_res)\
+                            .load(
+                                    'v10',
+                                    self.t_start,
+                                    self.t_end,
+                                    self.bounds,
+                                    self.download
+                                )['v10']
+
+            data = xr.apply_ufunc(
+                            xh.absolute,data_u,data_v,
+                            input_core_dims  = [[],[]],
+                            output_core_dims = [[]],
+                            vectorize=True,dask='parallelized'
+                        )
+
+            del data_u
+            del data_v
+
+            data = data.rename('U10')
+
+        else:
+
+            data = ECMWF_S2SH(high_res=self.high_res)\
+                            .load(
+                                    self.var,
+                                    self.t_start,
+                                    self.t_end,
+                                    self.bounds,
+                                    self.download
+                                )[self.var]
 
         # Converts Kelvin to degC, if this should be done here can be discussed?
         if self.var == 'sst':
