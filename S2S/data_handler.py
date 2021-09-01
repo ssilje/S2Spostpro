@@ -53,32 +53,58 @@ class Archive:
         """
         Returns filename to load from the S2S database
         """
-        var   = kwargs['var']
-        date  = kwargs['date']
-        run   = kwargs['run']
+        var         = self.given('var',kwargs)
+        start       = self.given('start_time',kwargs)
+        end         = self.given('end_time',kwargs)
+        model_cycle = self.given('model_cycle',kwargs)
 
-        model_version = d2m.which_mv_for_init(date)
+        # flex on model_cycle
+        if model_cycle is not None:
 
-        if kwargs['high_res']:
-            return var+'/'+'_'.join(
-                    [
-                        var,
-                        model_version,
-                        '05x05',
-                        date.strftime('%Y-%m-%d'),
-                        run
-                    ]
-                ) + '.grb'
+            if kwargs['high_res']:
+                return var+'/'+'_'.join(
+                        [
+                            var,
+                            model_cycle,
+                            '05x05',
+                            '*'
+                        ]
+                    ) + '.grb'
 
+            else:
+                return var+'/'+'_'.join(
+                        [
+                            var,
+                            model_cycle,
+                            '*'
+                        ]
+                    ) + '.grb'
+
+        # flex on time
         else:
-            return var+'/'+'_'.join(
-                    [
-                        var,
-                        model_version,
-                        date.strftime('%Y-%m-%d'),
-                        run
-                    ]
-                ) + '.grb'
+
+            time_interval = self.bash_time_interval(t_start,t_end)
+
+            if kwargs['high_res']:
+                return var+'/'+'_'.join(
+                        [
+                            var,
+                            '*',
+                            '05x05',
+                            time_interval,
+                            '*'
+                        ]
+                    ) + '.grb'
+
+            else:
+                return var+'/'+'_'.join(
+                        [
+                            var,
+                            model_cycle,
+                            time_interval,
+                            '*'
+                        ]
+                    ) + '.grb'
 
     @staticmethod
     def BW_in_filename(**kwargs):
@@ -108,6 +134,21 @@ class Archive:
         """
         if not os.path.exists(path):
             os.makedirs(path)
+
+    @staticmethod
+    def given(key,dictionary):
+        try:
+            return dictionary[key]
+        except KeyError:
+            return None
+
+    @staticmethod
+    def bash_time_interval(start,end):
+
+        year  = str(start.year) if end.year-start.year==0 else '*'
+        month = str(start.month) if end.month-start.month==0 and year!='*'\
+                                                                  else '*'
+        return '-'.join([year,month,'*'])
 
 class LoadLocal:
     """
@@ -188,6 +229,9 @@ class LoadLocal:
         # is deprocated and dt.days_from(self.start_time,self.end_time) could be
         # called directly.
 
+        # Second note, this function is depricated after update to
+        # load_mfdataset
+
         option = self.loading_options['load_time']
 
         if option=='daily':
@@ -202,12 +246,16 @@ class LoadLocal:
             raise KeyError
             exit()
 
-    def execute_loading_sequence(self,x_landmask=False):
+    def execute_loading_sequence(self,x_landmask=False,chunks=None):
 
         # Consider removing x_landmask option unless filling dataset holes
         # become something we want to do in the future
 
-        chunk = []
+        chunk = [] # depricated using mf
+
+        # CHANGE FILENAME TO LOAD USING MF
+        # THEN BACK TO WASHING MACHINE
+        # AND PROPAGATE chunks to surface
 
         sort_by     = self.loading_options['sort_by']
         resample    = self.loading_options['resample']
@@ -219,102 +267,137 @@ class LoadLocal:
 
         filename_func = self.filename(key='in')
 
-        for time in self.load_frequency():
+        # get flexible filename (filename with at least one * in it)
+        filename = filename_func(
+                                var         = self.var,
+                                start_time  = self.start_time,
+                                end_time    = self.end_time,
+                                model_cycle = self.model_cycle,
+                                high_res    = high_res
+                            )
 
-            runs   = ['pf','cf'] if control_run else [None]
+        # Load dataset using mf. What does mf actually stand for?
+        data = xarray.open_mfdataset(
+                                self.in_path + filename,
+                                chunks     = chunks,
+                                parallel   = True # good idea?
+                            )
 
-            OK = True
-            for n,run in enumerate(runs):
-
-                filename = filename_func(
-                                        var      = self.var,
-                                        date     = time,
-                                        run      = run,
-                                        ftype    = ftype,
-                                        high_res = high_res
-                                    )
-                if not os.path.exists(self.in_path+filename):
-                    OK = False
-
-            if OK:
-                members = []
-                for n,run in enumerate(runs):
-
-                    filename = filename_func(
-                                            var      = self.var,
-                                            date     = time,
-                                            run      = run,
-                                            ftype    = ftype,
-                                            high_res = high_res
-                                        )
-
-                    if n>0:
-                        members.append(open_data)
-
-
-                    # to suppress generation of the index file when
-                    # using cfgrib engine
-                    if engine=='cfgrib':
-                        with xr.open_dataset(
-                                            self.in_path + \
-                                            filename,engine = engine,
-                                            backend_kwargs  = {'indexpath':''}
-                                            ) as temp_data:
-                            open_data = temp_data
-
-                    else:
-                        with xr.open_dataset(self.in_path+\
-                                                    filename,engine=engine
-                                                    ) as temp_data:
-                            open_data = temp_data
-
-                    open_data = self.rename_dimensions(open_data)
-
-                    if sort_by:
-                        open_data = open_data.sortby(sort_by,ascending=True)
-
-                    open_data = open_data.sel(
-                                    lat=slice(self.bounds[2],self.bounds[3]),
-                                    lon=slice(self.bounds[0],self.bounds[1])
-                                    )
-
-                    if resample:
-                        open_data = open_data.resample(time=resample).mean()
-
-                    if x_landmask:
-                        open_data = xh.extrapolate_land_mask(open_data)
-
-                    if run=='cf':
-                        open_data = open_data.expand_dims('member')\
-                                        .assign_coords(member=pd.Index([0]))
-
-                    if self.prnt:
-                        print(filename)
-
-                if n>0:
-                    members.append(open_data)
-                    open_data = xr.concat(members,'member')
-
-                chunk.append(open_data)
-
-        return xr.concat(chunk,dimension)
+        print(data)
+        
+        # for time in self.load_frequency():
+        #
+        #     runs   = ['pf','cf'] if control_run else [None]
+        #
+        #     OK = True
+        #     for n,run in enumerate(runs):
+        #
+        #         filename = filename_func(
+        #                                 var      = self.var,
+        #                                 date     = time,
+        #                                 run      = run,
+        #                                 ftype    = ftype,
+        #                                 high_res = high_res
+        #                             )
+        #         if not os.path.exists(self.in_path+filename):
+        #             OK = False
+        #
+        #     if OK:
+        #         members = []
+        #         for n,run in enumerate(runs):
+        #
+        #             filename = filename_func(
+        #                                     var      = self.var,
+        #                                     date     = time,
+        #                                     run      = run,
+        #                                     ftype    = ftype,
+        #                                     high_res = high_res
+        #                                 )
+        #
+        #             if n>0:
+        #                 members.append(open_data)
+        #
+        #
+        #             # to suppress generation of the index file when
+        #             # using cfgrib engine
+        #             if engine=='cfgrib':
+        #                 with xr.open_dataset(
+        #                                     self.in_path + \
+        #                                     filename,engine = engine,
+        #                                     backend_kwargs  = {'indexpath':''}
+        #                                     ) as temp_data:
+        #                     open_data = temp_data
+        #
+        #             else:
+        #                 with xr.open_dataset(self.in_path+\
+        #                                             filename,engine=engine
+        #                                             ) as temp_data:
+        #                     open_data = temp_data
+        #
+        #             open_data = self.rename_dimensions(open_data)
+        #
+        #             if sort_by:
+        #                 open_data = open_data.sortby(sort_by,ascending=True)
+        #
+        #             open_data = open_data.sel(
+        #                             lat=slice(self.bounds[2],self.bounds[3]),
+        #                             lon=slice(self.bounds[0],self.bounds[1])
+        #                             )
+        #
+        #             if resample:
+        #                 open_data = open_data.resample(time=resample).mean()
+        #
+        #             if x_landmask:
+        #                 open_data = xh.extrapolate_land_mask(open_data)
+        #
+        #             if run=='cf':
+        #                 open_data = open_data.expand_dims('member')\
+        #                                 .assign_coords(member=pd.Index([0]))
+        #
+        #             if self.prnt:
+        #                 print(filename)
+        #
+        #         if n>0:
+        #             members.append(open_data)
+        #             open_data = xr.concat(members,'member')
+        #
+        #         chunk.append(open_data)
+        #
+        # return xr.concat(chunk,dimension)
 
     def load(
                 self,
                 var,
-                start_time,
-                end_time,
                 bounds,
-                download=False,
-                prnt=True,
-                x_landmask=False
+                start_time  = None, # times are dominant
+                end_time    = None, #
+                model_cycle = None,
+                download    = False,
+                prnt        = True,
+                chunks      = None,
+                x_landmask  = False # consider moving this option
             ):
+
+        if isinstance(start_time,tuple) and isinstance(end_time,tuple):
+            start_time = dt.to_datetime(start_time)
+            end_time   = dt.to_datetime(end_time)
+
+        elif isinstance(model_cycle,str):
+            start_time, end_time = d2m.mv_2_init(model_cycle)
+            start_time = dt.to_datetime(start_time)
+            end_time   = dt.to_datetime(end_time)
+
+        else:
+            raise ValueError('Must supply either start/end time or model_cycle.')
+            exit(1)
+
 
         archive = Archive()
 
         self.prnt         = prnt
 
         self.var          = var
+        self.model_cycle  = model_cycle
         self.start_time   = start_time
         self.end_time     = end_time
         self.bounds       = bounds
@@ -332,8 +415,14 @@ class LoadLocal:
 
             archive.make_dir(self.out_path)
 
-            data = self.execute_loading_sequence(x_landmask=x_landmask)
+            data = self.execute_loading_sequence(
+                                                    x_landmask = x_landmask,
+                                                    chunks     = chunks
+                                                )
 
+            # This is the advertised washingmachine, maybe wrap this as three
+            # functions. The washingmachine should convert everything to a
+            # common format
             if self.label=='ERA5':
                 data.transpose('time','lon','lat').to_netcdf(
                                                               self.out_path
