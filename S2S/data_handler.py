@@ -358,6 +358,163 @@ class LoadLocal:
 
         return xr.open_dataset(self.out_path+self.out_filename)
 
+        # OLD VERSION
+        # def execute_loading_sequence(self,x_landmask=False):
+        #
+        #     # Consider removing x_landmask option unless filling dataset holes
+        #     # become something we want to do in the future
+        #
+        #     chunk = []
+        #
+        #     sort_by     = self.loading_options['sort_by']
+        #     resample    = self.loading_options['resample']
+        #     engine      = self.loading_options['engine']
+        #     dimension   = self.loading_options['concat_dimension']
+        #     control_run = self.loading_options['control_run']
+        #     high_res    = self.loading_options['high_res']
+        #     ftype       = Archive().ftype[self.label]
+        #
+        #     filename_func = self.filename(key='in')
+        #
+        #     for time in self.load_frequency():
+        #
+        #         runs   = ['pf','cf'] if control_run else [None]
+        #
+        #         OK = True
+        #         for n,run in enumerate(runs):
+        #
+        #             filename = filename_func(
+        #                                     var      = self.var,
+        #                                     date     = time,
+        #                                     run      = run,
+        #                                     ftype    = ftype,
+        #                                     high_res = high_res
+        #                                 )
+        #             if not os.path.exists(self.in_path+filename):
+        #                 OK = False
+        #
+        #         if OK:
+        #             members = []
+        #             for n,run in enumerate(runs):
+        #
+        #                 filename = filename_func(
+        #                                         var      = self.var,
+        #                                         date     = time,
+        #                                         run      = run,
+        #                                         ftype    = ftype,
+        #                                         high_res = high_res
+        #                                     )
+        #
+        #                 if n>0:
+        #                     members.append(open_data)
+        #
+        #
+        #                 # to suppress generation of the index file when
+        #                 # using cfgrib engine
+        #                 if engine=='cfgrib':
+        #                     with xr.open_dataset(
+        #                                         self.in_path + \
+        #                                         filename,engine = engine,
+        #                                         backend_kwargs  = {'indexpath':''}
+        #                                         ) as temp_data:
+        #                         open_data = temp_data
+        #
+        #                 else:
+        #                     with xr.open_dataset(self.in_path+\
+        #                                                 filename,engine=engine
+        #                                                 ) as temp_data:
+        #                         open_data = temp_data
+        #
+        #                 open_data = self.rename_dimensions(open_data)
+        #
+        #                 if sort_by:
+        #                     open_data = open_data.sortby(sort_by,ascending=True)
+        #
+        #                 open_data = open_data.sel(
+        #                                 lat=slice(self.bounds[2],self.bounds[3]),
+        #                                 lon=slice(self.bounds[0],self.bounds[1])
+        #                                 )
+        #
+        #                 if resample:
+        #                     open_data = open_data.resample(time=resample).mean()
+        #
+        #                 if x_landmask:
+        #                     open_data = xh.extrapolate_land_mask(open_data)
+        #
+        #                 if run=='cf':
+        #                     open_data = open_data.expand_dims('member')\
+        #                                     .assign_coords(member=pd.Index([0]))
+        #
+        #                 if self.prnt:
+        #                     print(filename)
+        #
+        #             if n>0:
+        #                 members.append(open_data)
+        #                 open_data = xr.concat(members,'member')
+        #
+        #             chunk.append(open_data)
+        #
+        #     return xr.concat(chunk,dimension)
+        #
+        # def load(
+        #             self,
+        #             var,
+        #             start_time,
+        #             end_time,
+        #             bounds,
+        #             download=False,
+        #             prnt=True,
+        #             x_landmask=False
+        #         ):
+        #
+        #     archive = Archive()
+        #
+        #     self.prnt         = prnt
+        #
+        #     self.var          = var
+        #     self.start_time   = start_time
+        #     self.end_time     = end_time
+        #     self.bounds       = bounds
+        #     self.download     = download
+        #     self.out_filename = archive.out_filename(
+        #                                         var    = var,
+        #                                         start  = start_time,
+        #                                         end    = end_time,
+        #                                         bounds = bounds,
+        #                                         label  = archive.ftype[self.label]
+        #                                         )
+        #
+        #     while self.download or not os.path.exists(self.out_path
+        #                                                     +self.out_filename):
+        #
+        #         archive.make_dir(self.out_path)
+        #
+        #         data = self.execute_loading_sequence(x_landmask=x_landmask)
+        #
+        #         if self.label=='ERA5':
+        #             data.transpose('time','lon','lat').to_netcdf(
+        #                                                           self.out_path
+        #                                                         + self.out_filename
+        #                                                         )
+        #         elif self.label=='S2SH':
+        #
+        #             data.transpose(
+        #                         'member','step','time','lon','lat'
+        #                         ).to_netcdf(self.out_path + self.out_filename)
+        #
+        #         elif self.label=='S2SF':
+        #
+        #             data.transpose(
+        #                         'member','step','time', 'lon','lat'
+        #                         ).to_netcdf(self.out_path + self.out_filename)
+        #
+        #         else:
+        #             data.to_netcdf(self.out_path+self.out_filename)
+        #
+        #         self.download = False
+        #
+        #     return xr.open_dataset(self.out_path+self.out_filename)
+
 class ERA5(LoadLocal):
 
     def __init__(self,high_res=False):
