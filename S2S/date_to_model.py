@@ -1,6 +1,6 @@
 import pandas as pd
 from datetime import datetime
-#
+
 # dictionary of model versions with (start,end)
 model_version_specs = dict(
     ECMWF = dict(
@@ -17,6 +17,7 @@ model_version_specs = dict(
 def which_mv_for_init(fc_init_date,model='ECMWF',fmt='%Y-%m-%d'):
     """
     return model version for a specified initialization date and model
+
     INPUT:
             fc_init_date:   date string YYYY-mm-dd, datetime.datetime
                             or pandas.Timestamp
