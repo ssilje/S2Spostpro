@@ -4,6 +4,7 @@ import xarray as xr
 import pandas as pd
 import os
 import json
+import glob
 
 # local dependencies
 from S2S.local_configuration import config
@@ -35,9 +36,13 @@ class Archive:
 
     @staticmethod
     def ERA5_in_filename(**kwargs):
-
-        var  = kwargs['var']
-        date = kwargs['date']
+        """
+        Returns list of filenames to load from the ERA database
+        """
+        var    = self.given('var',kwargs)
+        start  = self.given('start_time',kwargs)
+        end    = self.given('end_time',kwargs)
+        path   = self.given('path',kwargs)
 
         var = {
                 'sst':'sea_surface_temperature',
@@ -46,65 +51,41 @@ class Archive:
                 't2m':'2m_temperature'
             }[var]
 
-        return '_'.join([var,date.strftime('%Y%m%d')])+'.nc'
+        # add variable sub-directory to path
+        path += var + '/'
+
+        filenames = self.get_filenames(path)
+
+        return filenames.sel(time=slice(start,end))
+
 
     @staticmethod
     def S2S_in_filename(**kwargs):
         """
-        Returns filename to load from the S2S database
+        Returns list of filenames to load from the S2S database
         """
         var         = self.given('var',kwargs)
         start       = self.given('start_time',kwargs)
         end         = self.given('end_time',kwargs)
         model_cycle = self.given('model_cycle',kwargs)
+        run         = self.given('run',kwargs)
+        path        = self.given('path',kwargs)
 
-        # flex on model_cycle
+        # add variable sub-directory to path
+        path += var + '/'
+
+        filenames = self.get_filenames(path,model_cycle=model_cycle,run=run)
+
+        filenames = filenames.sel(time=slice(start,end))
+
+        if run is not None:
+            filenames = filenames.sel(run=run)
+
         if model_cycle is not None:
+            filenames = filenames.sel(model_cycle=model_cycle)
 
-            if kwargs['high_res']:
-                return var+'/'+'_'.join(
-                        [
-                            var,
-                            model_cycle,
-                            '05x05',
-                            '*'
-                        ]
-                    ) + '.grb'
+        return filenames
 
-            else:
-                return var+'/'+'_'.join(
-                        [
-                            var,
-                            model_cycle,
-                            '*'
-                        ]
-                    ) + '.grb'
-
-        # flex on time
-        else:
-
-            time_interval = self.bash_time_interval(t_start,t_end)
-
-            if kwargs['high_res']:
-                return var+'/'+'_'.join(
-                        [
-                            var,
-                            '*',
-                            '05x05',
-                            time_interval,
-                            '*'
-                        ]
-                    ) + '.grb'
-
-            else:
-                return var+'/'+'_'.join(
-                        [
-                            var,
-                            model_cycle,
-                            time_interval,
-                            '*'
-                        ]
-                    ) + '.grb'
 
     @staticmethod
     def BW_in_filename(**kwargs):
@@ -143,12 +124,59 @@ class Archive:
             return None
 
     @staticmethod
-    def bash_time_interval(start,end):
+    def find_time(filename):
+        """
+        Returns pd.Timestamp of date found in filename of format *_yyyy-mm-dd_*
+        """
+        for instance in filename.split('_'):
+            try:
+                if len(instance)==10:
+                return pd.Timestamp(instance)
+            except ValueError:
+                pass
+        return None
 
-        year  = str(start.year) if end.year-start.year==0 else '*'
-        month = str(start.month) if end.month-start.month==0 and year!='*'\
-                                                                  else '*'
-        return '-'.join([year,month,'*'])
+    @staticmethod
+    def get_filename_info(filename,info):
+        """
+        Returns the either model_cycle or run (specified by info) from filename
+        """
+        return filename.split('_')[{'model_cycle':1,'run':-1}[info]]
+
+    @staticmethod
+    def get_filenames(path,**kwargs):
+        """
+        Returns a xarray.DataArray with all filenames in folder
+        with coordinates:
+            time,
+            model_cycle (if model_cycle is given),
+            run (cf,pf) (if run is given)
+
+        """
+        # parse argument to its retrieval function
+        p_pars = {
+                    'time'        : self.find_time,
+                    'model_cycle' : self.get_filename_info,
+                    'run'         : self.get_filename_info
+                }
+
+        # define coords based on kwargs
+        coords = {'time':[]}
+        if self.given('model_cycle',kwargs) is not None:
+            coords['model_cycle'] = []
+        if self.given('run',kwargs) is not None:
+            coords['run'] = []
+
+        # get all filenames in folder
+        all_files = glob.glob(path+'*')
+
+        # get coords
+        for file in all_files:
+            for key in coords:
+                coords[key].append(p_pars[key](file))
+
+        # make time object from files
+        return xr.DataArray(data=all_files,coords=coords).sort('time')
 
 class LoadLocal:
     """
@@ -180,6 +208,8 @@ class LoadLocal:
 
         self.start_time   = None
         self.end_time     = None
+
+        self.run          = ''
 
         self.bounds       = ()
 
@@ -273,6 +303,8 @@ class LoadLocal:
                                 start_time  = self.start_time,
                                 end_time    = self.end_time,
                                 model_cycle = self.model_cycle,
+                                path        = self.in_path,
+                                run         = self.run
                                 high_res    = high_res
                             )
 
@@ -284,7 +316,7 @@ class LoadLocal:
                             )
 
         print(data)
-        
+
         # for time in self.load_frequency():
         #
         #     runs   = ['pf','cf'] if control_run else [None]
@@ -375,6 +407,7 @@ class LoadLocal:
                 download    = False,
                 prnt        = True,
                 chunks      = None,
+                run         = None,
                 x_landmask  = False # consider moving this option
             ):
 
@@ -401,6 +434,7 @@ class LoadLocal:
         self.start_time   = start_time
         self.end_time     = end_time
         self.bounds       = bounds
+        self.run          = run
         self.download     = download
         self.out_filename = archive.out_filename(
                                             var    = var,
