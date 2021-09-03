@@ -16,8 +16,8 @@ config = {
     # 'S2SF':'data/nird_copy/S2S/Benjamin/forecast/ECMWF/sfc/', # local to henrik
     # 'S2SH':'data/nird_copy/S2S/Benjamin/hindcast/ECMWF/sfc/', # local to henrik
     # 'ERA5':'data/nird_copy/SFE/ERA_daily_nc/grid_15/',  # local to henrik
-    'SITES':'data/BW/sites.json',
-    'DOMAINS':'data/EIDE/domains.json',
+    'SITES':'/projects/NS9853K/DATA/BarentsWatch/sites.json',
+    # 'DOMAINS':'/projects/NS9853K/DATA/BarentsWatch/domains.json',
     'BW':'/projects/NS9853K/DATA/BarentsWatch/',
     'IMR':'./data/nird_copy/IMR/fastestasjoner/',
     'EIDE':'./projects/SST_oppdrett/',
