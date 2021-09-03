@@ -60,7 +60,7 @@ def norkyst_to_location(data,lat,lon,landmask,reflat,reflon):
 var = 'sst'
 bw_obs = BarentsWatch().load('all',no=0).sortby('time')[var].isel(time=0)
 
-path = '/nird/projects/NS9853K/DATA/norkyst800/'
+path = '/projects/NS9853K/DATA/norkyst800/'
 
 if not os.path.exists(path):
     os.mkdir(path)
@@ -121,7 +121,7 @@ for n,date in enumerate(date_range):
             out = out.assign_coords(radius=r)
 
             if download:
-                out.to_netcdf(filename_nird)
+                out.to_netcdf(path+filename_nird)
 
     except OSError:
 
