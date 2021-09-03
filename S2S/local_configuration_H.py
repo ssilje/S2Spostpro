@@ -18,7 +18,7 @@ config = {
     # 'ERA5':'data/nird_copy/SFE/ERA_daily_nc/grid_15/',  # local to henrik
     'SITES':'data/BW/sites.json',
     'DOMAINS':'data/EIDE/domains.json',
-    'BW':'./data/BW/BW_temperature/',
+    'BW':'/projects/NS9853K/DATA/BarentsWatch/',
     'IMR':'./data/nird_copy/IMR/fastestasjoner/',
     'EIDE':'./projects/SST_oppdrett/',
     'S2SH_HR':'/projects/NS9853K/DATA/S2S/MARS/hindcast/ECMWF/sfc/',
