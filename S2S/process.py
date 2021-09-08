@@ -105,20 +105,20 @@ class Hindcast:
                 while self.smaller_than(self.t_end,t_end):
 
                     print('\tLoad hindcast')
-                    raw = self.load_data().sortby('time')
+                    self.raw = self.load_data().sortby('time')
+
+                    print('\tApply 7D running mean along lead time dimension')
+                    data = self.raw.rolling(step=7,center=True).mean()
 
                     # Select only given period
                     if self.period is not None:
 
-                        self.raw = self.raw.sel(
+                        data = data.sel(
                                         time=slice(
                                                 dt.to_datetime(self.period[0]),
                                                 dt.to_datetime(self.period[1])
                                                 )
                                             )
-
-                    print('\tApply 7D running mean along lead time dimension')
-                    data = raw.rolling(step=7,center=True).mean()
 
                     if self.steps is not None:
                         print('\tKeep only specified lead times')
@@ -149,18 +149,18 @@ class Hindcast:
                 print('\tLoad hindcast')
                 self.raw = self.load_data().sortby('time')
 
+                print('\tApply 7D running mean along lead time dimension')
+                self.data = self.raw.rolling(step=7,center=True).mean()
+
                 # Select only given period
                 if self.period is not None:
 
-                    self.raw = self.raw.sel(
+                    self.data = self.data.sel(
                                     time=slice(
                                             dt.to_datetime(self.period[0]),
                                             dt.to_datetime(self.period[1])
                                             )
                                         )
-
-                print('\tApply 7D running mean along lead time dimension')
-                self.data = self.raw.rolling(step=7,center=True).mean()
 
                 if self.steps is not None:
                     print('\tKeep only specified lead times')
@@ -644,10 +644,13 @@ class Observations:
 
             # lon/lat are lost in storage process
             # if contained in encoding['coordinates']
-            coords = self.data.encoding['coordinates'].split(' ')
-            while 'lon' in coords: coords.remove('lon')
-            while 'lat' in coords: coords.remove('lat')
-            self.data.encoding['coordinates'] = ' '.join(coords)
+            try:
+                coords = self.data.encoding['coordinates'].split(' ')
+                while 'lon' in coords: coords.remove('lon')
+                while 'lat' in coords: coords.remove('lat')
+                self.data.encoding['coordinates'] = ' '.join(coords)
+            except KeyError:
+                pass
 
             self.store(self.data,filename_absolute)
 
