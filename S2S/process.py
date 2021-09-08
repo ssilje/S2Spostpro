@@ -105,7 +105,7 @@ class Hindcast:
                 while self.smaller_than(self.t_end,t_end):
 
                     print('\tLoad hindcast')
-                    raw = self.load_data().sortby('time')
+                    self.raw = self.load_data().sortby('time')
 
                     # Select only given period
                     if self.period is not None:
@@ -644,10 +644,13 @@ class Observations:
 
             # lon/lat are lost in storage process
             # if contained in encoding['coordinates']
-            coords = self.data.encoding['coordinates'].split(' ')
-            while 'lon' in coords: coords.remove('lon')
-            while 'lat' in coords: coords.remove('lat')
-            self.data.encoding['coordinates'] = ' '.join(coords)
+            try:
+                coords = self.data.encoding['coordinates'].split(' ')
+                while 'lon' in coords: coords.remove('lon')
+                while 'lat' in coords: coords.remove('lat')
+                self.data.encoding['coordinates'] = ' '.join(coords)
+            except KeyError:
+                pass
 
             self.store(self.data,filename_absolute)
 
