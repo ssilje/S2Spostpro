@@ -144,23 +144,23 @@ mae_pers = xs.mae(
 
 del observations
 
-for month in np.arange(1,13,1):
+for season in ['DJF','MAM','JJA','SON']:
 
-    month = str(month)
+    season = str(season)
 
-    mae_fc_mon = mae_fc.where(mae_fc.time.dt.month==int(month),drop=True)\
+    mae_fc_mon = mae_fc.where(mae_fc.time.dt.season==season,drop=True)\
                                     .mean('time',skipna=True)
 
-    crps_fc_mon = crps_fc.where(crps_fc.time.dt.month==int(month),drop=True)\
+    crps_fc_mon = crps_fc.where(crps_fc.time.dt.season==season,drop=True)\
                                     .mean('time',skipna=True)
 
-    crps_clim_mon = crps_clim.where(crps_clim.time.dt.month==int(month),drop=True)\
+    crps_clim_mon = crps_clim.where(crps_clim.time.dt.season==season,drop=True)\
                                     .mean('time',skipna=True)
 
-    mae_pers_mon = mae_pers.where(mae_pers.time.dt.month==int(month),drop=True)\
+    mae_pers_mon = mae_pers.where(mae_pers.time.dt.season==season,drop=True)\
                                     .mean('time',skipna=True)
 
-    mae_clim_mon = mae_clim.where(mae_clim.time.dt.month==int(month),drop=True)\
+    mae_clim_mon = mae_clim.where(mae_clim.time.dt.season==season,drop=True)\
                                     .mean('time',skipna=True)
     print('FC',np.isfinite(mae_fc_mon.values).sum())
     print('Clim',np.isfinite(mae_clim_mon.values).sum())
@@ -204,7 +204,7 @@ for month in np.arange(1,13,1):
 
             # ax.coastlines(resolution='10m', color='grey',\
             #                         linewidth=0.2)
-            ax.set_title(mparser[month] + ' MAESS, DAYS: '\
+            ax.set_title(season + ' MAESS, DAYS: '\
                                         +str(step.days-4)+'-'+str(step.days+3))
             cbar=fig.colorbar(cs,ax=ax)
             cbar.set_ticks(levels)
@@ -212,7 +212,7 @@ for month in np.arange(1,13,1):
             cbar.ax.set_title('EC')
             cbar.ax.set_xlabel(lab)
             graphics.save_fig(fig,
-                            '82020-82021_hardanger_mae_skill_map_NorKyst_month'+month+lab+str(step.days)
+                            '82020-82021_hardanger_mae_skill_map_NorKyst_season'+season+lab+str(step.days)
                             )
 
         latex.set_style(style='white')
@@ -252,13 +252,13 @@ for month in np.arange(1,13,1):
         # ax.coastlines(resolution='10m', color='grey',\
         #                         linewidth=0.2)
 
-        ax.set_title(mparser[month] + ' CRPSS, DAYS: '\
+        ax.set_title(season + ' CRPSS, DAYS: '\
                                         +str(step.days-4)+'-'+str(step.days+3))
-        cbar = fig.colorbar(cs,ax=ax)
+        cbar=fig.colorbar(cs,ax=ax)
         cbar.set_ticks(levels)
         cbar.set_ticklabels(levels)
         cbar.ax.set_title('EC')
         cbar.ax.set_xlabel('CLIM')
         graphics.save_fig(fig,
-                        '82020-82021_hardanger_crps_skill_map_NorKyst_month'+month+'CLIM'+str(step.days)
+                        '82020-82021_hardanger_crps_skill_map_NorKyst_season'+season+'CLIM'+str(step.days)
                         )
