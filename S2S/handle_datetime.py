@@ -13,6 +13,8 @@ def to_datetime(tup):
     """
     if isinstance(tup,tuple):
         return pd.to_datetime(f'{tup[0]}-{tup[1]}-{tup[2]}',format='%Y-%m-%d')
+    elif isinstance(tup,str):
+        return pd.to_datetime(tup)
     else:
         return tup
 

@@ -13,6 +13,11 @@ model_version_specs = dict(
     )
 )
 
+# inverse dictionary
+# date_specs = {
+#             model: {dates: mv for mv,dates in map.items()}\
+#                 for model,map in model_version_specs.items()
+#             }
 
 def which_mv_for_init(fc_init_date,model='ECMWF',fmt='%Y-%m-%d'):
     """
@@ -64,5 +69,28 @@ def which_mv_for_init(fc_init_date,model='ECMWF',fmt='%Y-%m-%d'):
 
         raise ValueError(
             'No matching model version found...'
+            )
+        return None
+
+def mv_2_init(mv,model='ECMWF'):
+    """
+    return initialization date for specified model version and model
+
+    INPUT:
+            mv:             string, model version
+            model:          string for the modeling center (currently just
+                            'ECMWF' is valid)
+                            default: 'ECMWF'
+            fmt:            string specifying the date format,
+                            default: '%Y-%m-%d'
+    OUTPUT:
+            date:           tuple of string with start and end date
+                            on the format ('%Y-%m-%d','%Y-%m-%d')
+    """
+    try:
+        return model_version_specs[model][mv]
+    except KeyError:
+        raise KeyError(
+            'Model version not recognized'
             )
         return None
