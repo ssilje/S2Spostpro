@@ -137,8 +137,12 @@ class Hindcast:
                 # concatinate xarray.DataArrays in list to one xarray.DataArray
                 self.data = xr.concat(data_list,'time')
 
-                # deal with duplicates along time dimesion
-                self.data = self.data.groupby('time').mean()
+                ################################################################
+                # Deals with duplicates along time dimensions
+                _,c = np.unique(self.data.time.values, return_counts=True)
+                if len(c[c>1])>0:
+                    self.data = self.data.groupby('time').mean(skipna=True)
+                ################################################################
 
                 # restore original times of loading
                 self.t_start = t_start
