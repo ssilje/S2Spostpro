@@ -56,7 +56,9 @@ months  = ['01','02','03','04','05','06','07','08','09','10','11','12']
 mae_fc, mae_clim, mae_pers = [], [], []
 ################################################################################
 bw = BarentsWatch().load('all',no=0).sortby('time')[var]
-bw = lc.cluster(bw,'Hisdalen',3,1)
+
+bw = lc.cluster(bw,'Hisdalen',3,1.5)
+
 
 t_start  = (2020,8,1) #can start with 8
 t_end    = (2021,8,1)
@@ -93,6 +95,7 @@ observations = Observations(
                             forecast=hindcast,
                             process=False
                             )
+
 del nk
 
 hindcast = Grid2Point(observations,hindcast)\
@@ -153,6 +156,9 @@ for month in np.arange(1,13,1):
 
     mae_clim_mon = mae_clim.where(mae_clim.time.dt.month==int(month),drop=True)\
                                     .mean('time',skipna=True)
+
+    print('FC',np.isfinite(mae_fc_mon.values).sum())
+    print('Clim',np.isfinite(mae_clim_mon.values).sum())
 
     for step in steps:
 
