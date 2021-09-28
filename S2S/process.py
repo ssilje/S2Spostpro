@@ -839,6 +839,7 @@ class Grid2Point:
             self.get_highest_r, ds.o, ds.a, ds.v, ds.m, ds.s,
             input_core_dims  = input_core_dims,
             output_core_dims = output_core_dims,
+            # exclude_dims     = set(['lon','lat']),
             vectorize=True
             )
 

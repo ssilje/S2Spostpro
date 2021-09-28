@@ -1,11 +1,12 @@
 grid.linewidth : 0.05
 savefig.dpi :    360
 figure.dpi :     360
+figure.titlesize: xx-large         
 text.usetex :    False
 font.family :    serif
 font.serif : "Computer Modern Roman",
-axes.labelsize :  6
-axes.titlesize :  6
+axes.labelsize :  7
+axes.titlesize :  9
 font.size :       4
 legend.fontsize : 4
 xtick.labelsize : 4

@@ -534,6 +534,7 @@ def at_validation(obs,vt,ddays=1):
                 tolerance  = pd.Timedelta(ddays,'D'),
                 fill_value = np.nan
                 )
+        
         o = o.assign_coords(time=o.time-t).rename(time='step')
         out.append(o)
 

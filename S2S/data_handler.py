@@ -218,11 +218,11 @@ class LoadLocal:
         ftype       = Archive().ftype[self.label]
 
         filename_func = self.filename(key='in')
-
+        print(self.start_time,self.end_time)
         for time in self.load_frequency():
 
             runs   = ['pf','cf'] if control_run else [None]
-
+            
             OK = True
             for n,run in enumerate(runs):
 
@@ -235,6 +235,8 @@ class LoadLocal:
                                     )
                 if not os.path.exists(self.in_path+filename):
                     OK = False
+
+            print(self.in_path+filename,OK)
 
             if OK:
                 members = []
@@ -368,7 +370,7 @@ class ERA5(LoadLocal):
 
         self.loading_options['load_time']        = 'daily'
         self.loading_options['concat_dimension'] = 'time'
-        self.loading_options['resample']         = 'D'
+        self.loading_options['resample']         = False
         self.loading_options['sort_by']          = 'lat'
         self.loading_options['control_run']      = False
         self.loading_options['engine']           = 'netcdf4'

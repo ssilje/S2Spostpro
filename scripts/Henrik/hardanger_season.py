@@ -176,7 +176,7 @@ for season in ['DJF','MAM','JJA','SON']:
             ss = ( 1 - mae_fc_mon/ref_fc ).sel(step=step)
 
             cmap   = latex.skill_cmap().reversed()
-            levels = levels = [-0.5,-0.4,-0.3,-0.2,-0.1,-0.05,0.05,0.1,0.2,0.3,0.4,0.5] #np.arange(-0.5,0.6,0.1)
+            levels = [-0.5,-0.4,-0.3,-0.2,-0.1,-0.05,0.05,0.1,0.2,0.3,0.4,0.5] #np.arange(-0.5,0.6,0.1)
             norm   = BoundaryNorm(levels,cmap.N)
 
             cs = ax.scatter(

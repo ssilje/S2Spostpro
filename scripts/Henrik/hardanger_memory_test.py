@@ -23,8 +23,6 @@ from . import norkyst_restack
 
 nk = norkyst_restack.run()
 
-
-
 def plus_minus_15_days(t_start,t_end):
     if t_start[1]==1:
         t_start = (t_start[0]-1,12,15)
@@ -197,9 +195,11 @@ for month in np.arange(1,13,1):
             resol = '10m'  # use data at this scale
             land = cfeature.NaturalEarthFeature('physical', 'land', \
                 scale=resol, edgecolor='k', facecolor=cfeature.COLORS['land'])
+            river = cfeature.RIVERS(scale=resol)
             # ocean = cfeature.NaturalEarthFeature('physical', 'ocean', \
             #     scale=resol, edgecolor='none', facecolor=cfeature.COLORS['water'])
             ax.add_feature(land, zorder=1, facecolor='beige', linewidth=0.2)
+            ax.add_feature(river, zorder=2)
             # ax.add_feature(ocean, linewidth=0.2, zorder=0 )
 
             # ax.coastlines(resolution='10m', color='grey',\

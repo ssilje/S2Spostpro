@@ -52,7 +52,7 @@ def diverge_skill_map(high=(0.565, 0.392, 0.173),low=(0.094, 0.310, 0.635),sep='
     c = mcolors.ColorConverter().to_rgb
     if isinstance(low, str): low = c(low)
     if isinstance(high, str): high = c(high)
-    return make_colormap([low, c('white'),0.45,c('yellow'),0.55, c('white'),high])
+    return make_colormap([low,c('white'),0.5,c('white'),high])
 
 def diverge_map_grey(high=(0.565, 0.392, 0.173), low=(0.094, 0.310, 0.635)):
     '''

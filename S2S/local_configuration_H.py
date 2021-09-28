@@ -9,10 +9,10 @@ config = {
     "S2S_DIR_summer2018": '', # "/nird/projects/NS9001K/sso102/S2S/DATA/SUMMER2018",
     "SAVEFIG": 'figures/', # " /nird/projects/NS9001K/sso102/FIGUERS"
     'VALID_DB':'/projects/NS9853K/DATA/processed/valid_db/',
-    'NORKYST':'/projects/NS9853K/DATA/norkyst800/',
+    'NORKYST':'/projects/NS9853K/DATA/norkyst800/processed/',
     'S2SF':'/projects/NS9853K/DATA/S2S/forecast/ECMWF/sfc/',
     'S2SH':'/projects/NS9853K/DATA/S2S/hindcast/ECMWF/sfc/',
-    'ERA5':'/projects/NS9853K/DATA/SFE/ERA_daily_nc/grid_15/',
+    'ERA5':'/projects/NS9853K/DATA/SFE/ERA_daily_nc/grid_15',
     # 'S2SF':'data/nird_copy/S2S/Benjamin/forecast/ECMWF/sfc/', # local to henrik
     # 'S2SH':'data/nird_copy/S2S/Benjamin/hindcast/ECMWF/sfc/', # local to henrik
     # 'ERA5':'data/nird_copy/SFE/ERA_daily_nc/grid_15/',  # local to henrik

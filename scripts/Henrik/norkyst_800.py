@@ -32,7 +32,7 @@ def distance(lat1, lon1, lat2, lon2):
 def norkyst_to_location(data,lat,lon,landmask,reflat,reflon):
 
     appr_data = []
-    rs        = []
+    # rs        = []
 
     landmask  = landmask.astype('int')
 
@@ -59,9 +59,9 @@ def norkyst_to_location(data,lat,lon,landmask,reflat,reflon):
         dist_wr = dist[idx][lm]
 
         appr_data.append( lin_weight( data_wr, dist_wr, target_radius ) )
-        rs.append( target_radius )
+        # rs.append( target_radius )
 
-    return np.array(appr_data),np.array(rs)
+    return np.array(appr_data)# ,np.array(rs)
 
 def norkyst_to_location_1D(data,lat,lon,landmask,rlat,rlon):
 
@@ -242,25 +242,58 @@ def download_new():
                 print('OSError')
                 pass
 
-def to_bw2():
+def check_empty():
 
     path      = config['NORKYST']
-    filenames = glob.glob(path+'norkyst800_sst_2017-03-0*daily_mean*')
+    filenames = [
+        path+'norkyst800_sst_'+date.strftime('%Y-%m-%d')+'_daily_mean.nc'\
+        for date in pd.date_range(start='2012-01-01',end='2020-01-01',freq='D')
+    ]
+
+    for filename in filenames:
+
+        try:
+
+            out_filename = filename[:-3]+'_atBW'+'.nc'
+
+            # print('Open dataset: ',out_filename.split('/')[-1])
+            data = xr.open_dataset(out_filename)
+
+            if len(data.sizes)==0:
+                print('Empty: ',out_filename.split('/')[-1])
+                print(data)
+                os.remove(out_filename)
+
+        except FileNotFoundError:
+            print('FileNotFoundError: ',out_filename.split('/')[-1])
+
+
+
+def to_bw2(download=False):
+
+    path      = config['NORKYST']
+    filenames = [
+        path+'norkyst800_sst_'+date.strftime('%Y-%m-%d')+'_daily_mean.nc'\
+        for date in pd.date_range(start='2012-01-01',end='2020-01-01',freq='D')
+    ]
+
+    # filenames = glob.glob(path+'norkyst800_sst_*daily_mean.nc')
     out_path  = path+'new/'
+
 
     if not os.path.exists(out_path):
         os.mkdir(out_path)
 
-    cluster = LocalCluster(
-                                n_workers=4,
-                                threads_per_worker=4,
-                                processes=True,
-                                lifetime='30 minutes',
-                                lifetime_stagger='5 minute',
-                                lifetime_restart=True
-                            )
-
-    client = Client(cluster)
+    # cluster = LocalCluster(
+    #                             n_workers=4,
+    #                             threads_per_worker=2,
+    #                             processes=True,
+    #                             lifetime='30 minutes',
+    #                             lifetime_stagger='1 minute',
+    #                             lifetime_restart=True
+    #                         )
+    #
+    # client = Client(cluster)
 
     bw_obs = BarentsWatch().load('all',no=0).sortby('time').isel(time=0)
     lons   = bw_obs.lon
@@ -268,44 +301,119 @@ def to_bw2():
 
     del bw_obs
 
-    print('Open datasets')
-    data   = xr.open_mfdataset(
-                                filenames,
-                                chunks={'time':1},
-                                parallel=True,
-                                concat_dim='time',
-                                join='outer'
-                            )
-
-    print('Get landmask')
     land = xr.open_dataset(path+'norkyst800_landmask.nc')
 
-    print('Interpoolating to BarentsWatch locations')
-    out,r = xr.apply_ufunc(
-            norkyst_to_location,
-            data.sst,
-            data.lat,
-            data.lon,
-            land.mask,
-            lats.chunk({'location':5}),
-            lons.chunk({'location':5}),
-            input_core_dims=[
-                                ['X','Y'],['X','Y'],['X','Y'],['X','Y'],
-                                ['location'],['location'],
-                            ],
-            output_core_dims=[['location'],['location']],
-            vectorize=True,
-            dask='parallelized'
-        )
+    for filename in filenames:
 
-    print('Re-chunk')
-    out = out.to_dataset(name='sst').chunk({'location':1,'time':-1})
-    for loc in out.location.values:
-        out.to_netcdf(out_path+'NorKyst800_'+str(loc)+'.nc')
-        print(loc,'stored')
+        out_filename = filename[:-3]+'_atBW'+'.nc'
 
-    cluster.close()
-    client.close()
+        if not os.path.exists(out_filename):
+
+            try:
+
+                print('Open dataset',filename.split('/')[-1])
+                data = xr.open_dataset(filename)
+                print(data)
+
+                xr.Dataset().to_netcdf(out_filename)
+
+                try:
+                    print('Interpoolating to BarentsWatch locations')
+                    xr.apply_ufunc(
+                            norkyst_to_location,
+                            data.sst,
+                            data.lat,
+                            data.lon,
+                            land.mask,
+                            lats,
+                            lons,
+                            input_core_dims=[
+                                                ['X','Y'],['X','Y'],['X','Y'],['X','Y'],
+                                                ['location'],['location'],
+                                            ],
+                            output_core_dims=[['location']],
+                            vectorize=True,
+                            dask='parallelized'
+                        ).to_dataset(name='sst').to_netcdf(out_filename)
+
+                    print(out_filename.split('/')[-1],' Stored')
+
+                except ValueError:
+                    print('Alignment error:')
+                    print(data)
+
+            except FileNotFoundError:
+                print(filename.split('/')[-1],' Not Found')
+                pass
+
+
+
+    # cluster.close()
+    # client.close()
+
+    # while not os.path.exists(path+'norkyst800_sst_daily_mean.nc') or download:
+    #
+    #     print('Open datasets')
+    #     data = xr.open_mfdataset(
+    #             filenames,
+    #             chunks={'time':10},
+    #             parallel=True,
+    #             concat_dim='time',
+    #             join='inner'
+    #         )
+    #
+    #     download = False
+    #
+    #     print(data)
+    #
+    #     print('Get landmask')
+    #     land = xr.open_dataset(path+'norkyst800_landmask.nc')
+    #
+    #     print('Get BarentsWatch')
+    #     bw_obs = BarentsWatch().load('all',no=0).sortby('time').isel(time=0)
+    #     lons   = bw_obs.lon
+    #     lats   = bw_obs.lat
+    #
+    #     del bw_obs
+    #
+    #     print('Interpoolating to BarentsWatch locations')
+    #     out,r = xr.apply_ufunc(
+    #             norkyst_to_location,
+    #             data.sst,
+    #             data.lat,
+    #             data.lon,
+    #             land.mask,
+    #             lats,
+    #             lons,
+    #             input_core_dims=[
+    #                                 ['X','Y'],['X','Y'],['X','Y'],['X','Y'],
+    #                                 ['location'],['location'],
+    #                             ],
+    #             output_core_dims=[['location'],['location']],
+    #             vectorize=True,
+    #             dask='parallelized'
+    #         )
+    #
+    #     out.to_dataset(name='sst').to_netcdf(path+'norkyst800_sst_daily_mean_interpolated.nc')
+
+    # print('Open interpolated')
+    # data = xr.open_dataset(
+    #     path+'norkyst800_sst_daily_mean_interpolated.nc',
+    #     chunks={'location':100}
+    # )
+    #
+    # print(data)
+    #
+    # locations,datasets = zip(*data.groupby('location'))
+    # out_fnames = [out_path+'NorKyst800_'+loc+'.nc' for loc in locations]
+    # xr.save_mfdataset(datasets,out_fnames)
+
+    ## for loc in out.location.values:
+    ##     out.to_netcdf(out_path+'NorKyst800_'+str(loc)+'.nc')
+    ##     print(loc,'stored')
+
+    # cluster.close()
+    # client.close()
 
     # out = out.to_dataset(name='sst').chunk({'time':-1,'location':1})
     # print('Storing by location')
@@ -318,6 +426,34 @@ def to_bw2():
 
     # ds = ds.sst.rolling(time=7,center=True).mean()
 
+def stack(download=False):
+
+    path      = config['NORKYST']
+    filenames = [
+        path+'norkyst800_sst_'+date.strftime('%Y-%m-%d')+'_daily_mean_atBW.nc'\
+        for date in pd.date_range(start='2012-01-01',end='2020-01-01',freq='D')
+    ]
+
+    files = []
+    for filename in filenames:
+
+        try:
+
+            print('Open dataset',filename.split('/')[-1])
+            files.append(xr.open_dataset(filename))
+
+
+        except FileNotFoundError:
+            print(filename.split('/')[-1],' Not Found')
+            pass
+
+    data = xr.concat(files,'time')
+    del files
+
+    for loc in data.location.values:
+        data.sel(location=loc).to_netcdf(path+'NorKyst800_'+str(loc)+'.nc')
+        print('NorKyst800_'+str(loc)+'.nc Stored')
+        # 13246
 def to_bw():
 
     path      = config['NORKYST']
@@ -384,3 +520,105 @@ def to_bw():
 
     cluster.close()
     client.close()
+
+# def to_bw2(download=False):
+#
+#     path      = config['NORKYST']
+#     filenames = glob.glob(path+'norkyst800_sst_*daily_mean*')
+#     out_path  = path+'new/'
+#
+#     if not os.path.exists(out_path):
+#         os.mkdir(out_path)
+#
+#     cluster = LocalCluster(
+#                                 n_workers=2,
+#                                 threads_per_worker=2,
+#                                 processes=True,
+#                                 lifetime='30 minutes',
+#                                 lifetime_stagger='1 minute',
+#                                 lifetime_restart=True
+#                             )
+#
+#     client = Client(cluster)
+#
+#     while not os.path.exists(path+'norkyst800_sst_daily_mean.nc') or download:
+#
+#         print('Open datasets')
+#         xr.open_mfdataset(
+#                 filenames,
+#                 chunks={'time':10},
+#                 parallel=True,
+#                 concat_dim='time',
+#                 join='inner'
+#             ).to_netcdf(path+'norkyst800_sst_daily_mean.nc')
+#
+#         download = False
+#
+#     data = xr.open_dataset(
+#         path+'norkyst800_sst_daily_mean.nc',
+#         chunks={'time':50}
+#     )
+#
+#     print(data)
+#
+#     print('Get landmask')
+#     land = xr.open_dataset(path+'norkyst800_landmask.nc')
+#
+#     print('Get BarentsWatch')
+#     bw_obs = BarentsWatch().load('all',no=0).sortby('time').isel(time=0)
+#     lons   = bw_obs.lon
+#     lats   = bw_obs.lat
+#
+#     del bw_obs
+#
+#     while not os.path.exists(path+'norkyst800_sst_daily_mean_interpolated.nc') or download:
+#
+#         print('Interpoolating to BarentsWatch locations')
+#         out,r = xr.apply_ufunc(
+#                 norkyst_to_location,
+#                 data.sst,
+#                 data.lat,
+#                 data.lon,
+#                 land.mask,
+#                 lats,
+#                 lons,
+#                 input_core_dims=[
+#                                     ['X','Y'],['X','Y'],['X','Y'],['X','Y'],
+#                                     ['location'],['location'],
+#                                 ],
+#                 output_core_dims=[['location'],['location']],
+#                 vectorize=True,
+#                 dask='parallelized'
+#             )
+#
+#         out.to_dataset(name='sst').to_netcdf(path+'norkyst800_sst_daily_mean_interpolated.nc')
+#
+#     print('Open interpolated')
+#     data = xr.open_dataset(
+#         path+'norkyst800_sst_daily_mean_interpolated.nc',
+#         chunks={'location':100}
+#     )
+#
+#     print(data)
+#
+#     locations,datasets = zip(*data.groupby('location'))
+#     out_fnames = [out_path+'NorKyst800_'+loc+'.nc' for loc in locations]
+#     xr.save_mfdataset(datasets,out_fnames)
+#
+#     ## for loc in out.location.values:
+#     ##     out.to_netcdf(out_path+'NorKyst800_'+str(loc)+'.nc')
+#     ##     print(loc,'stored')
+#
+#     cluster.close()
+#     client.close()
+#
+#     # out = out.to_dataset(name='sst').chunk({'time':-1,'location':1})
+#     # print('Storing by location')
+#     # # locations,datasets = zip(*out.groupby('location'))
+#     # # xr.save_mfdataset(datasets,out_paths)
+#     # for loc in out.location.values:
+#     #
+#     #     out.sel(location=loc).to_netcdf(path+'NorKyst800_'+str(loc)+'.nc')
+#
+#
+#     # ds = ds.sst.rolling(time=7,center=True).mean()

@@ -2,11 +2,13 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 import xskillscore as xs
+import properscoring as ps
 
 import S2S.xarray_helpers as xh
 
 def centered_acc(x,y):
     """
+    @author: Henrik Auestad
     Anomaly correlation after Wilks (2011, Chapter 8) - Eq. 8.
 
     D.S. Wilks, Chapter 8 - Forecast Verification,
@@ -32,6 +34,7 @@ def centered_acc(x,y):
 
 def uncentered_acc(x,y):
     """
+    @author: Henrik Auestad
     Anomaly correlation after Wilks (2011, Chapter 8) - Eq. 8.64
 
     D.S. Wilks, Chapter 8 - Forecast Verification,
@@ -57,6 +60,7 @@ def uncentered_acc(x,y):
 
 def ACc(forecast,observations,weights=None,centered=True):
     """
+    @author: Henrik Auestad
     Anomaly correlation after Wilks (2011, Chapter 8)
 
     D.S. Wilks, Chapter 8 - Forecast Verification,
@@ -139,29 +143,81 @@ def CRPS_ensemble(obs,fc,fair=True,axis=0):
 
 def crps_ensemble(obs,fc,fair=True):
     """
+    @author: Henrik Auestad
     A xarray wrapper for CRPS_ensemble()
     """
 
     # obs = obs.broadcast_like(fc.mean('member'))
     obs,fc = xr.align(obs,fc,join='outer')
-    print(obs)
 
     return xr.apply_ufunc(
-            CRPS_ensemble, obs, fc,
-            input_core_dims  = [['time'],['member','time']],
+            CRPS_ensemble, obs, fc, fair,
+            input_core_dims  = [['time'],['member','time'],[]],
             output_core_dims = [['time']],
             vectorize=True
         )
 
 def fair_brier_score(observations,forecasts):
-
+    """
+    @author: Henrik Auestad (copied from xskilllscore)
+    """
     M = forecasts['member'].size
     e = (forecasts == 1).sum('member')
     o = observations
     return (e / M - o) ** 2 - e * (M - e) / (M ** 2 * (M - 1))
 
+def annual_bootstrap_CRPS(fc,obs,N):
+    """
+    @author: Henrik Auestad
+    """
+    y,d,m = fc.shape
+
+    # generate random integers as indices for fc-obs pairs
+    _idx_f = np.random.randint(low=0,high=y,size=(N,y))
+    _idx_o = np.random.randint(low=0,high=y,size=(N,y))
+
+    b_fc = np.transpose(fc[_idx_f,:,:],(3,0,1,2))
+
+    # hardcode to crps
+    score_fc = np.nanmean(CRPS_ensemble(obs[_idx_o,:],b_fc),(-2))
+    score_cl = np.nanmean(ps.crps_gaussian(obs[_idx_o,:],mu=0,sig=1),(-2))
+    print('.\n..\n...')
+    return 1 - ( np.nanmean(score_fc,-1) / np.nanmean(score_cl,-1) )
+
+def annual_bootstrap(observations,forecast,score_func,N=10000):
+    """
+    @author: Henrik Auestad
+    """
+    data  = xr.merge(
+        [
+            forecast.rename('fc'),
+            observations.rename('obs')
+        ],
+    join='inner',
+    compat='equals'
+    )
+
+    # split into weeks
+    ds   = xh.unstack_time(data)
+
+    if score_func=='CRPS':
+        # get bootstrapped null-distribution
+        return xr.apply_ufunc(
+                annual_bootstrap_CRPS, ds.fc, ds.obs, N,
+                input_core_dims  = [
+                                    ['year','dayofyear','member'],
+                                    ['year','dayofyear'],
+                                    []
+                                ],
+                output_core_dims = [['sample']],
+                vectorize = True, dask='parallelized'
+            )
+    else:
+        return None
+
 class SSCORE:
     """
+    @author: Henrik Auestad
     Calculate monthly and seasonal means of scores with bootstrapped CIs.
     """
 

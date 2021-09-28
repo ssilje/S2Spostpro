@@ -2,18 +2,27 @@
 # import scripts.Henrik.verify2norkyst2
 # import scripts.Henrik.compare_rho
 # import scripts.Henrik.era_variance
-from scripts.Henrik.norkyst_variance import run as nv_run
+# from scripts.Henrik.climatology_wind import compute_climatology
+from scripts.Henrik.era_coastline import go,var,dvar
+# from scripts.Henrik.test_map import go
+# from scripts.Henrik.norkyst_variance import run as nv_run
 # from scripts.Henrik.norkyst2BWloc import run as n2b_run
-from scripts.Henrik.hardanger_qq import run as qq_run
-from scripts.Henrik.norkyst_800 import download, download_new, to_bw
-from scripts.Henrik.timeseries import observations_closeup,observations
+# from scripts.Henrik.hardanger_qq import run as qq_run
+# from scripts.Henrik.norkyst_800 import download,download_new,to_bw2,check_empty,stack
+# from scripts.Henrik.timeseries import observations_closeup,observations
 
 if __name__=='__main__':
-
+    # dvar()
+    # var()
+    go()
+    # compute_climatology()
+    # check_empty()
+    # to_bw2()
+    # check_empty()
     # observations('Hisdalen')
-    observations_closeup('Hisdalen')
+    # observations_closeup(['Hisdalen','Breivik S'])
     # download()
-    # to_bw()
+    # to_bw2()
     # n2b_run()
     # qq_run()
     # nv_run()
