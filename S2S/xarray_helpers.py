@@ -9,6 +9,8 @@ from S2S.graphics import graphics as gr
 
 def print_progress(n,N,i='',e=''):
     """
+    @Author: Henrik Auestad
+    
     Print progression
 
     args:
@@ -19,13 +21,19 @@ def print_progress(n,N,i='',e=''):
 
 def running_clim(x,index,window=30,cross_validation=False):
     """
+    @Author: Henrik Auestad
+    
     Computes mean and standard deviation over x keeping dim -1. Dim -1 must be
     'dayofyear', with the corresponding days given in index.
+    
+    If cross_validation=True: like running_clim_CV but for forecast (includes member dim)
 
     args:
         x:      np.array of float, with day of year as index -1
         index:  np.array of int, 1-dimensional holding dayofyear corresponding
                 to dim -1 of x
+        window: days to compute moments over, int
+        cross_validation: bool
 
     returns
         mean:   np.array of float, with day of year as index -1 and year as
@@ -42,7 +50,8 @@ def running_clim(x,index,window=30,cross_validation=False):
     """
     mean  = []
     std   = []
-
+    
+    # make data circular in terms of day of year (requires full year cyclus)
     pad   = window//2
 
     x     = np.pad(x,pad,mode='wrap')[pad:-pad,pad:-pad,:]
@@ -94,6 +103,8 @@ def running_clim(x,index,window=30,cross_validation=False):
 
 def running_clim_CV(x,index,window=30):
     """
+    @Author: Henrik Auestad
+    
     Like running_clim() but leaves out current year in computation for
     cross validation
 
@@ -155,6 +166,8 @@ def running_clim_CV(x,index,window=30):
 
 def o_climatology(da,window=30):
     """
+    @Author: Henrik Auestad
+    
     Climatology with centered initialization time, using cross validation
     using a 30-day window.
 
@@ -186,7 +199,10 @@ def o_climatology(da,window=30):
 
 def c_climatology(da,window=30,cross_validation=False):
     """
+    @Author: Henrik Auestad
+    
     Climatology with centered initialization time
+    Like o_climatology but for forecast (includes member dim)
     """
 
     print('\t\txarray_helpers.c_climatology()')
@@ -211,6 +227,8 @@ def c_climatology(da,window=30,cross_validation=False):
 
 def unstack_time(da):
     """
+    @author: Henrik Auestad
+    
     Splits time dimension in da into a 'year' and a 'dayofyear' dimension.
     Coordinate time must be datetime-like.
 
@@ -237,6 +255,8 @@ def unstack_time(da):
 
 def stack_time(da):
     """
+    @author: Henrik Auestad
+    
     Stacks 'year' and 'dayofyear' dimensions in a xarray.DataArray to a 'time'
     dimension.
 
@@ -261,6 +281,8 @@ def stack_time(da):
 
 def assign_validation_time(ds):
     """
+    @author: Henrik Auestad
+    
     Add validation_time coordinates to xarray.Dataset/DataArray with 'time' and
     'step' dimensions.
 
@@ -279,6 +301,8 @@ def assign_validation_time(ds):
 
 def store_by_location(da,filename):
     """
+    @author: Henrik Auestad
+    
     Store file with location dim, per location
 
     args:
@@ -304,6 +328,8 @@ def store_by_location(da,filename):
 
 def load_by_location(location,filename):
     """
+    @author: Henrik Auestad
+    
     Load file with location in in filename and concatinate along location dim
 
     args:
@@ -332,6 +358,8 @@ def load_by_location(location,filename):
 
 def xtrapolate_NAN(x):
     """
+    @author: Henrik Auestad
+    
     Underfunction of extrapolate_land_mask
 
     Inter/extrapolate NaN values by meaning over the sorrounding grid points
@@ -376,6 +404,8 @@ def xtrapolate_NAN(x):
 
 def extrapolate_land_mask(da):
     """
+    @author: Henrik Auestad
+    
     Fill/extrapolate NaN values by linearly interpolating neighbouring values.
     Routine is repeated until all NaN (except boundaries) are filled in.
 
@@ -394,6 +424,8 @@ def extrapolate_land_mask(da):
 
 def interp_to_loc(observations,hindcast):
     """
+    @author: Henrik Auestad
+    
     Interpolate gridded hindcast to point locations specified by location
     dimension in observations. Returns hindcast with location dimension.
 
@@ -437,6 +469,8 @@ def step_at_zero(ss,step):
 
 def return_lead_time_at_ss_zero(ss):
     """
+    @author: Henrik Auestad
+    
     ss: xarray.DataArray must contain step dimension
     """
     return xr.apply_ufunc(
@@ -511,6 +545,8 @@ def return_lead_time_at_ss_zero(ss):
 
 def at_validation(obs,vt,ddays=1):
     """
+    @author: Henrik Auestad
+    
     args:
         obs:   xarray.Dataset with time dimension
         vt:    xarray.DataArray time + step dimension
@@ -542,6 +578,8 @@ def at_validation(obs,vt,ddays=1):
 
 def running_mean(hindcast,window):
     """
+    @author: Henrik Auestad
+    
     Apply runnning mean on hindcast per location. Labels centered in the window.
 
     args:
@@ -567,6 +605,8 @@ def running_mean(hindcast,window):
 
 def absolute(u,v):
     """
+    @author: Henrik Auestad
+    
     Compute the absoulte value of two horizontal components.
 
     U = sqrt( u**2 + v**2 )
@@ -581,7 +621,8 @@ def absolute(u,v):
     return np.sqrt( u**2 + v**2 )
 
 def cor_map(x, y):
-    """Correlate each n with each m.
+    """
+    Correlate each n with each m.
 
     Parameters
     ----------
