@@ -2,6 +2,7 @@ import numpy as np
 import xarray as xr
 import pandas as pd
 from datetime import date, datetime, timedelta, timezone
+import S2S.xarray_helpers    as xh
 def Hindcast_seasonal(
     data_dir,
     variable,
@@ -49,7 +50,6 @@ data_hindcast = Hindcast_seasonal(
     t_end = '19930201',
     lat_bounds = [0, 40],
     lon_bounds = [-10, 30],
-
     )
 
-
+hindcast           = xh.assign_validation_time(data_hindcast)
