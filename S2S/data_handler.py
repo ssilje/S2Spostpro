@@ -44,7 +44,7 @@ class Archive:
                 'u10':'10m_u_component_of_wind',
                 'v10':'10m_v_component_of_wind',
                 't2m':'2m_temperature',
-                'tp' :'total_precipitation'
+                'tp':'total_precipitation'
             }[var]
 
         return '_'.join([var,date.strftime('%Y%m%d')])+'.nc'
@@ -334,7 +334,7 @@ class LoadLocal:
             archive.make_dir(self.out_path)
 
             data = self.execute_loading_sequence(x_landmask=x_landmask)
-
+            print(x_landmask.data)
             if self.label=='ERA5':
                 data.transpose('time','lon','lat').to_netcdf(
                                                               self.out_path
