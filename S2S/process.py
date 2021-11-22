@@ -648,20 +648,20 @@ class Observations:
 
             # lon/lat are lost in storage process
             # if contained in encoding['coordinates']
-            print(self.data)
-            try: 
-                coords = self.data.encoding['coordinates'].split(' ')
-            except KeyError:
-                pass
-            try: 
-                coords = self.data.encoding['Coordinates'].split(' ')
-            except KeyError:
-                pass
+          #  print(self.data)
+          #  try: 
+          #      coords = self.data.encoding['coordinates'].split(' ')
+          #  except KeyError:
+          #      pass
+          #  try: 
+          #      coords = self.data.encoding['Coordinates'].split(' ')
+          #  except KeyError:
+          #      pass
             
-            print(coords)
-            while 'lon' in coords: coords.remove('lon')
-            while 'lat' in coords: coords.remove('lat')
-            self.data.encoding['coordinates'] = ' '.join(coords)
+        #    print(coords)
+        #    while 'lon' in coords: coords.remove('lon')
+        #    while 'lat' in coords: coords.remove('lat')
+        #    self.data.encoding['coordinates'] = ' '.join(coords)
 
             self.store(self.data,filename_absolute)
 
