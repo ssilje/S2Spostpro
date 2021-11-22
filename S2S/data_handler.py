@@ -334,7 +334,7 @@ class LoadLocal:
             archive.make_dir(self.out_path)
 
             data = self.execute_loading_sequence(x_landmask=x_landmask)
-            print(x_landmask.data)
+       
             if self.label=='ERA5':
                 data.transpose('time','lon','lat').to_netcdf(
                                                               self.out_path
