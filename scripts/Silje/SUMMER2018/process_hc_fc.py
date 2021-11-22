@@ -61,3 +61,6 @@ grid_hindcast = Hindcast(
                         download=False,
                         split_work=False
                     )
+
+era = ERA5(high_res=high_res)\
+                            .load(var,clim_t_start,clim_t_end,bounds)[var]
