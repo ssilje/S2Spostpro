@@ -43,7 +43,8 @@ class Archive:
                 'sst':'sea_surface_temperature',
                 'u10':'10m_u_component_of_wind',
                 'v10':'10m_v_component_of_wind',
-                't2m':'2m_temperature'
+                't2m':'2m_temperature',
+                'tp' :'total_precipitation'
             }[var]
 
         return '_'.join([var,date.strftime('%Y%m%d')])+'.nc'
