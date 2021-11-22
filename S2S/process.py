@@ -657,6 +657,8 @@ class Observations:
                 coords = self.data.encoding['Coordinates'].split(' ')
             except KeyError:
                 pass
+            
+            print(coords)
             while 'lon' in coords: coords.remove('lon')
             while 'lat' in coords: coords.remove('lat')
             self.data.encoding['coordinates'] = ' '.join(coords)
