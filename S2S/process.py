@@ -649,7 +649,10 @@ class Observations:
             # lon/lat are lost in storage process
             # if contained in encoding['coordinates']
             print(self.data)
-            coords = self.data.encoding['coordinates'].split(' ')
+            try: 
+                coords = self.data.encoding['coordinates'].split(' ')
+            try: 
+                coords = self.data.encoding['Coordinates'].split(' ')
             while 'lon' in coords: coords.remove('lon')
             while 'lat' in coords: coords.remove('lat')
             self.data.encoding['coordinates'] = ' '.join(coords)
