@@ -651,11 +651,11 @@ class Observations:
             print(self.data)
             try: 
                 coords = self.data.encoding['coordinates'].split(' ')
-            except KeyErro:
+            except KeyError:
                 pass
             try: 
                 coords = self.data.encoding['Coordinates'].split(' ')
-            except KeyErro:
+            except KeyError:
                 pass
             while 'lon' in coords: coords.remove('lon')
             while 'lat' in coords: coords.remove('lat')
