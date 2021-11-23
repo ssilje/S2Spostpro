@@ -50,13 +50,32 @@ grid_hindcast = Hindcast(
                         split_work=False
                     )
 
+grid_forecast = Forecast(
+                        var,
+                        t_start,
+                        t_end,
+                        bounds,
+                        high_res=high_res,
+                        steps=steps,
+                        process=True,
+                        download=False,
+                        split_work=False
+                    )
+
 era = ERA5(high_res=high_res)\
                             .load(var,clim_t_start,clim_t_end,bounds)[var]
 
 
-grid_observations = Observations(
+grid_observations_hc = Observations(
   name='Era',
   observations=era,
   forecast=grid_hindcast,
   process=False
+)
+
+grid_observations_fc = Observations(
+                                   name='Era',
+                                   observations=era,
+                                   forecast=grid_forecast,
+                                   process=False
 )
