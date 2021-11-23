@@ -52,3 +52,11 @@ grid_hindcast = Hindcast(
 
 era = ERA5(high_res=high_res)\
                             .load(var,clim_t_start,clim_t_end,bounds)[var]
+
+
+grid_observations = Observations(
+  name='Era',
+  observations=era,
+  forecast=grid_hindcast,
+  process=False
+)
