@@ -79,3 +79,12 @@ grid_observations_fc = Observations(
                                    forecast=grid_forecast,
                                    process=False
 )
+
+
+
+obs = []
+obs.append(grid_observations_hc.data)
+obs.append(grid_observations_fc.data)
+
+obs_full = xr.concat(obs,dim='time') ## stacking the data along month dimension
+obs_full = obs_full.rename(var)
