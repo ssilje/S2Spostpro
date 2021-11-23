@@ -24,11 +24,11 @@ var             = 'tp'
 
 #clabel          = 'K'
 t_start         = (2018,3,1)
-t_end           = (2018,5,1)
+t_end           = (2018,10,1)
 
 
 clim_t_start    = (1999,1,1)
-clim_t_end      = (2000,12,31)
+clim_t_end      = (2019,12,31)
 
 
 high_res        = False
