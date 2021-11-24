@@ -70,14 +70,14 @@ grid_observations_hc = Observations(
   name='Era',
   observations=era,
   forecast=grid_hindcast,
-  process=False
+  process=True
 )
 
 grid_observations_fc = Observations(
                                    name='Era',
                                    observations=era,
                                    forecast=grid_forecast,
-                                   process=False
+                                   process=True
 )
 
 
