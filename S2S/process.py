@@ -320,6 +320,10 @@ class Hindcast:
             file.to_netcdf(self.path+filename)
 
     def load(self,filename):
+        if self.var == 'tp':
+            data = xr.open_dataset(self.path+filename)[self.var]
+            print(data.shape)
+        
         return xr.open_dataset(self.path+filename)[self.var]
 
 class Forecast:
