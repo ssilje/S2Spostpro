@@ -256,6 +256,12 @@ class Hindcast:
             data = data - 273.15
 
         return data
+    
+        if self.var == 'tp':
+            print(data.shape)
+            
+
+        return data
 
     @staticmethod
     def drop_unwanted_dimensions(data):
