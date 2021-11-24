@@ -744,7 +744,7 @@ class Observations:
         # I get wrong time. I now include a switch that is deleting the file. 
         
         if os.path.isfile(self.path+filename):
-            os.remove(self.path+filename))
+            os.remove(self.path+filename)
             print(self.path+filename)
         file.to_netcdf(self.path+filename)
 
