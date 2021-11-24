@@ -738,8 +738,14 @@ class Observations:
                     ) + '.nc'
 
     def store(self,file,filename):
-        if not os.path.isfile(self.path+filename):
-            file.to_netcdf(self.path+filename)
+        # this needs to be improved. 
+        # The years in the file that is stored is not refelcting the name, 
+        # so when generating the observations for the hindcast and forecast in the same script, 
+        # I get wrong time. I now include a switch that is deleting the file. 
+        
+        if os.path.isfile(self.path+filename):
+            os.remove(self.path+filename)
+        file.to_netcdf(self.path+filename)
 
     def load(self,filename):
         return xr.open_dataset(self.path+filename)[self.var]
