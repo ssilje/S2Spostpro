@@ -566,7 +566,8 @@ class Forecast:
                     ) + '.nc'
 
     def store(self,file,filename):
-        file.to_netcdf(self.path+filename)
+        if not os.path.isfile(self.path+filename):
+            file.to_netcdf(self.path+filename)
 
     def load(self,filename):
         return xr.open_dataset(self.path+filename)[self.var]
@@ -737,7 +738,8 @@ class Observations:
                     ) + '.nc'
 
     def store(self,file,filename):
-        file.to_netcdf(self.path+filename)
+        if not os.path.isfile(self.path+filename):
+            file.to_netcdf(self.path+filename)
 
     def load(self,filename):
         return xr.open_dataset(self.path+filename)[self.var]
