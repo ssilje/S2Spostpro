@@ -106,7 +106,7 @@ class Hindcast:
 
                     print('\tLoad hindcast')
                     raw = self.load_data().sortby('time')
-                    print(raw)
+                    #print(raw)
 
                     # Select only given period
                     if self.period is not None:
