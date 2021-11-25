@@ -272,6 +272,10 @@ class LoadLocal:
                     open_data = self.rename_dimensions(open_data)
                     if self.var == 'tp':
                         data = list(open_data.groupby('step'))
+                        for m,(mm,fcdata) in enumerate(data): #loop through each step
+                            print(m)
+                            print(mm)
+                            print(fcdata)
                         print('groupby step')
                         print(len(data))
                         #print('open data')
