@@ -357,6 +357,8 @@ class LoadLocal:
 
             self.download = False
 
+        test = xr.open_dataset(self.out_path+self.out_filename)
+        print(test)
         return xr.open_dataset(self.out_path+self.out_filename)
 
 class ERA5(LoadLocal):
