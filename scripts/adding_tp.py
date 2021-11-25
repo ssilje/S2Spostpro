@@ -24,7 +24,7 @@ var             = 'tp'
 
 #clabel          = 'K'
 t_start         = (2018,3,1)
-t_end           = (2018,10,1)
+t_end           = (2018,4,1)
 
 
 clim_t_start    = (1999,1,1)
@@ -305,3 +305,13 @@ for lt in steps:
             figname = 'HC_FC_step_' + str(lt.days) + '_month_' + str(mf) + '_' + reg + '_full_ens.png'
             plt.savefig(figname,dpi='figure',bbox_inches='tight')
             
+
+            
+for lt in steps:                    
+    if lt.days == 0:
+        data_new_temp = open_data.sel(step = steps[0])
+        data_new_temp = data_new_temp.assign_coords(step = lt)
+    else:
+        data_new_temp = open_data.sel(step = steps[lt.days]) - open_data.sel(step = steps[lt.days-1])
+        data_new_temp = data_new_temp.assign_coords(step = lt)                             
+data_new.append(data_new_temp)               
