@@ -270,6 +270,9 @@ class LoadLocal:
                             open_data = temp_data
 
                     open_data = self.rename_dimensions(open_data)
+                    print('open data')
+                    print(open_data)
+                    
 
                     if sort_by:
                         open_data = open_data.sortby(sort_by,ascending=True)
