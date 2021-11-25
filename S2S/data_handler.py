@@ -270,7 +270,10 @@ class LoadLocal:
                             open_data = temp_data
 
                     open_data = self.rename_dimensions(open_data)
+                    # making daily accumulated precipitation
+                    
                     if self.var == 'tp':
+                        print('caluculating daily accumulated precipitation')
                         
                         data_new = []
                         steps           = pd.to_timedelta(np.linspace(0, 46, num=47),'D')
