@@ -270,7 +270,7 @@ class LoadLocal:
                             open_data = temp_data
 
                     open_data = self.rename_dimensions(open_data)
-                    if var == 'tp':
+                    if self.var == 'tp':
                         print('open data')
                         print(open_data)
                     
