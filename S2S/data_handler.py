@@ -286,7 +286,8 @@ class LoadLocal:
                             data_new_temp = data_new_temp.assign_coords(step = lt)                             
                             data_new.append(data_new_temp)   
                         data = xr.concat(data_new,dim='step')                                     
-                     open_data = data
+                     
+                    open_data = data
                     
 
                     if sort_by:
