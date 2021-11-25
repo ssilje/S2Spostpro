@@ -271,15 +271,42 @@ class LoadLocal:
 
                     open_data = self.rename_dimensions(open_data)
                     if self.var == 'tp':
-                        data = list(open_data.groupby('step'))
-                        for m,(mm,fcdata) in enumerate(data): #loop through each step
-                            print(m)
+                        #data = list(open_data.groupby('step'))
+                        
+                        
+                        data_new = []
+                        steps           = pd.to_timedelta(np.linspace(0, 46, num=47),'D')
+                        
+                        for lt in steps:
+                        
+                            if lt.days == 0:
+                                data_new_temp = open_data.sel(step = steps[0])
+                                data_new_temp = data_new_temp.assign_coords(step = lt)
+                            else:
+                                data_new_temp = open_data.sel(step = steps[lt.days]) - open_data.sel(step = steps[lt.days-1])
+                                data_new_temp = data_new_temp.assign_coords(step = lt)
+                            data_new_temp = data_new_temp.assign_coords(step = lt)                             
+                            data_new.append(data_new_temp)   
+                        data = xr.concat(data_new,dim='step')                                     
+                            
+                            #mm step, 
+                            print(m) 
                             print(mm)
                             print(fcdata)
                         print('groupby step')
                         print(len(data))
                         #print('open data')
                         #print(open_data)
+                        
+                        fcc = []
+            for ensm in range(0,51,1):
+                fc_anom = fcdata_m.sel(member=ensm) - hcdata_m.mean('time').mean('member')  
+                  
+                fcc.append(fc_anom)
+            fcc_member = xr.concat(fcc,dim='member')    
+            fcc_day.append(fcc_member)
+            
+            
                     
 
                     if sort_by:
