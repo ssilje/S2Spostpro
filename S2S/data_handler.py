@@ -270,9 +270,8 @@ class LoadLocal:
                             open_data = temp_data
 
                     open_data = self.rename_dimensions(open_data)
-                    # making daily accumulated precipitation
-                    print(self.in_path)
-                    print(self.label)
+                    # making daily accumulated precipitation, only for the forecast/hindcast
+                 
                     if self.label != 'ERA5':
                         if self.var == 'tp' :
                             print('caluculating daily accumulated precipitation')
