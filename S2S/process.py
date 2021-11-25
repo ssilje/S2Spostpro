@@ -258,12 +258,15 @@ class Hindcast:
 
         return data
     
-         # Check if used
-        if self.var == 'tp':
-            print(data.shape)
+         
+        #if self.var == 'tp':
+            #    dim               = 'validation_time.month'
+    
+            # fc_group          = list(fc_steps.groupby(dim)) 
+           # print(data.shape)
             
 
-        return data
+       # return data
 
     @staticmethod
     def drop_unwanted_dimensions(data):
