@@ -271,8 +271,10 @@ class LoadLocal:
 
                     open_data = self.rename_dimensions(open_data)
                     if self.var == 'tp':
-                        print('open data')
-                        print(open_data)
+                        data = list(open_data.groupby('step'))
+                        len(data)
+                        #print('open data')
+                        #print(open_data)
                     
 
                     if sort_by:
