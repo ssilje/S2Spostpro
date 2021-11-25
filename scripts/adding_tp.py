@@ -95,7 +95,7 @@ obs_full = obs_full.rename(var)
 
 reanalysis         = xh.assign_validation_time(obs_full)
 
-
+reanalysis  = reanalysis  * 1000
 hindcast           = xh.assign_validation_time(grid_hindcast.data)
 
 
