@@ -106,6 +106,7 @@ class Hindcast:
 
                     print('\tLoad hindcast')
                     raw = self.load_data().sortby('time')
+                    print(raw)
 
                     # Select only given period
                     if self.period is not None:
@@ -257,6 +258,7 @@ class Hindcast:
 
         return data
     
+         # Check if used
         if self.var == 'tp':
             print(data.shape)
             
@@ -322,7 +324,7 @@ class Hindcast:
     def load(self,filename):
         if self.var == 'tp':
             data = xr.open_dataset(self.path+filename)[self.var]
-            print(data.shape)
+           # print(data.shape)
         
         return xr.open_dataset(self.path+filename)[self.var]
 
