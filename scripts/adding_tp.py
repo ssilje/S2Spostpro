@@ -66,6 +66,7 @@ era = ERA5(high_res=high_res)\
                             .load(var,clim_t_start,clim_t_end,bounds)[var]
 
 ## need to have grid_observations_fc first. if grid_observations_hc is first, the date in grid_observations_fc is the same as grid_observations_hc.
+# still something strange with hc fc obs. 
 
 grid_observations_fc = Observations(
                                    name='Era',
@@ -307,11 +308,11 @@ for lt in steps:
             
 
             
-for lt in steps:                    
-    if lt.days == 0:
-        data_new_temp = open_data.sel(step = steps[0])
-        data_new_temp = data_new_temp.assign_coords(step = lt)
-    else:
-        data_new_temp = open_data.sel(step = steps[lt.days]) - open_data.sel(step = steps[lt.days-1])
-        data_new_temp = data_new_temp.assign_coords(step = lt)                             
-data_new.append(data_new_temp)               
+#for lt in steps:                    
+#    if lt.days == 0:
+#        data_new_temp = open_data.sel(step = steps[0])
+#        data_new_temp = data_new_temp.assign_coords(step = lt)
+#    else:
+#        data_new_temp = open_data.sel(step = steps[lt.days]) - open_data.sel(step = steps[lt.days-1])
+#        data_new_temp = data_new_temp.assign_coords(step = lt)                             
+#data_new.append(data_new_temp)               
