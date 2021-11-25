@@ -273,25 +273,26 @@ class LoadLocal:
                     # making daily accumulated precipitation
                     print(self.in_path)
                     print(self.label)
-                    if self.var == 'tp' and  self.label != 'ERA5':
-                        print('caluculating daily accumulated precipitation')
+                    if self.label != 'ERA5':
+                        if self.var == 'tp' :
+                            print('caluculating daily accumulated precipitation')
                         
-                        data_new = []
-                        steps           = pd.to_timedelta(np.linspace(0, 46, num=47),'D')
+                            data_new = []
+                            steps           = pd.to_timedelta(np.linspace(0, 46, num=47),'D')
                         
-                        for lt in steps:
+                            for lt in steps:
                         
-                            if lt.days == 0:
-                                data_new_temp = open_data.sel(step = steps[0])
-                                data_new_temp = data_new_temp.assign_coords(step = lt)
-                            else:
-                                data_new_temp = open_data.sel(step = steps[lt.days]) - open_data.sel(step = steps[lt.days-1])
-                                data_new_temp = data_new_temp.assign_coords(step = lt)
-                            data_new_temp = data_new_temp.assign_coords(step = lt)                             
-                            data_new.append(data_new_temp)   
-                        data = xr.concat(data_new,dim='step')                                     
+                                if lt.days == 0:
+                                    data_new_temp = open_data.sel(step = steps[0])
+                                    data_new_temp = data_new_temp.assign_coords(step = lt)
+                                else:
+                                    data_new_temp = open_data.sel(step = steps[lt.days]) - open_data.sel(step = steps[lt.days-1])
+                                    data_new_temp = data_new_temp.assign_coords(step = lt)
+                                data_new_temp = data_new_temp.assign_coords(step = lt)                             
+                                data_new.append(data_new_temp)   
+                            data = xr.concat(data_new,dim='step')                                     
                      
-                    open_data = data
+                        open_data = data
                     
 
                     if sort_by:
