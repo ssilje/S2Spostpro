@@ -654,6 +654,8 @@ class Observations:
         print(self.forecast.data)
         print(forecast.data.time)
         print(forecast.data.step)
+        print(self.forecast.data.time)
+        print(self.forecast.data.step)
         
         if self.process or not os.path.exists(self.path+filename_absolute):
 
