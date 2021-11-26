@@ -695,8 +695,10 @@ class Observations:
         #    self.data.encoding['coordinates'] = ' '.join(coords)
 
             self.store(self.data,filename_absolute)
+            print(self.data)
 
         self.data = self.load(filename_absolute)
+        print(self.data)
 
         filename_anomalies = self.filename_func('anomalies')
         filename_mean      = self.filename_func('obs_mean')
@@ -777,6 +779,7 @@ class Observations:
         file.to_netcdf(self.path+filename)
 
     def load(self,filename):
+        print(self.path+filename)
         return xr.open_dataset(self.path+filename)[self.var]
 
 class Grid2Point:
