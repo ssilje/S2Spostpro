@@ -82,7 +82,7 @@ grid_observations_hc = Observations(
   forecast=grid_hindcast,
   process=True
 )
-
+## Test på mandag - ser ut som det funkar no, men er litt usikker..
 
 obs = []
 obs.append(grid_observations_hc.data)
