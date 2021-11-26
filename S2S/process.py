@@ -647,7 +647,12 @@ class Observations:
                             )
 
         filename_absolute = self.filename_func('absolute')
-
+        
+        print(self.path)
+        print(filename_absolute)
+        print(self.observations)
+        print(self.forecast.data)
+        
         if self.process or not os.path.exists(self.path+filename_absolute):
 
             print('Process observations')
