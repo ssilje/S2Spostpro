@@ -280,6 +280,7 @@ class LoadLocal:
                             steps           = pd.to_timedelta(np.linspace(0, 46, num=47),'D')
                         
                             for lt in steps:
+                                print(open_data)
                         
                                 if lt.days == 0:
                                     data_new_temp = open_data.sel(step = steps[0])
