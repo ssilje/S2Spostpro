@@ -294,7 +294,7 @@ class LoadLocal:
                      
                         open_data = data
                         
-                    if f self.label == 'ERA5':
+                    if self.label == 'ERA5':
                         if self.var == 'tp' :
                             open_data = open_data * 1000 # convert to mm
 
