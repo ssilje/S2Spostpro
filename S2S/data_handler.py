@@ -292,9 +292,11 @@ class LoadLocal:
                                 data_new.append(data_new_temp)   
                             data = xr.concat(data_new,dim='step')                                     
                      
-                       # open_data = data
-                        open_data = data * 1000
-                    
+                        open_data = data
+                        
+                    if f self.label == 'ERA5':
+                        if self.var == 'tp' :
+                            open_data = open_data * 1000 # convert to mm
 
                     if sort_by:
                         open_data = open_data.sortby(sort_by,ascending=True)
