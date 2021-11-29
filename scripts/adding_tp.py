@@ -75,6 +75,8 @@ grid_observations_fc = Observations(
                                    process=True
 )
 
+era = ERA5(high_res=high_res)\
+                            .load(var,clim_t_start,clim_t_end,bounds)[var]
 
 grid_observations_hc = Observations(
   name='Era',
