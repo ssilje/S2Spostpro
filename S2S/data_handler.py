@@ -296,6 +296,7 @@ class LoadLocal:
                         
                     if self.label == 'ERA5':
                         if self.var == 'tp' :
+                            print('converting from m to mm')
                             open_data = open_data * 1000 # convert to mm
 
                     if sort_by:
