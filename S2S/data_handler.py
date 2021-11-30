@@ -290,7 +290,7 @@ class LoadLocal:
                                     data_new_temp = data_new_temp.assign_coords(step = lt)
                                 data_new_temp = data_new_temp.assign_coords(step = lt)                             
                                 data_new.append(data_new_temp)   
-                            data = xr.concat(data_new,dim='step')                                     
+                            data = xr.concat(data_new,dim='step')  # Unit mm/6h                                   
                      
                         open_data = data
                         
@@ -298,6 +298,7 @@ class LoadLocal:
                         if self.var == 'tp' :
                             print('converting from m to mm')
                             open_data = open_data * 1000 # convert to mm
+                            print(open_data)
 
                     if sort_by:
                         open_data = open_data.sortby(sort_by,ascending=True)
