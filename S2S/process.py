@@ -258,15 +258,6 @@ class Hindcast:
 
         return data
     
-         
-        #if self.var == 'tp':
-            #    dim               = 'validation_time.month'
-    
-            # fc_group          = list(fc_steps.groupby(dim)) 
-           # print(data.shape)
-            
-
-       # return data
 
     @staticmethod
     def drop_unwanted_dimensions(data):
@@ -648,18 +639,6 @@ class Observations:
 
         filename_absolute = self.filename_func('absolute')
         
-        print(self.path)
-        print(filename_absolute)
-        print(self.observations)
-        print(self.forecast.data)
-        print('forecast.data.time')
-        print(forecast.data.time)
-        print('forecast.data.step')
-        print(forecast.data.step)
-        print('self.forecast.data.time')
-        print(self.forecast.data.time)
-        print('self.forecast.data.step')
-        print(self.forecast.data.step)
         
         if self.process or not os.path.exists(self.path+filename_absolute):
 
@@ -695,10 +674,10 @@ class Observations:
         #    self.data.encoding['coordinates'] = ' '.join(coords)
 
             self.store(self.data,filename_absolute)
-            print(self.data)
+            #print(self.data)
 
         self.data = self.load(filename_absolute)
-        print(self.data)
+        #print(self.data)
 
         filename_anomalies = self.filename_func('anomalies')
         filename_mean      = self.filename_func('obs_mean')
