@@ -297,8 +297,8 @@ class LoadLocal:
                     if self.label == 'ERA5':
                         if self.var == 'tp' :
                             print('converting from m to mm')
-                            open_data_tmp = open_data.sum('time')
-                            open_data = open_data_tmp.assign_coords(time = open_data.time[-1]) # Not sure what should be the valid time for daily accumulated precipi
+                            open_data = open_data.sum('time')
+                           # open_data = open_data_tmp.assign_coords(time = open_data.time[-1]) # Not sure what should be the valid time for daily accumulated precipi
                             open_data = open_data * 1000 # convert to mm
                             print(open_data)
 
@@ -311,7 +311,11 @@ class LoadLocal:
                                     )
 
                     if resample:
-                        open_data = open_data.resample(time=resample).mean()
+                        if self.label == 'ERA5':
+                            if self.var == 'tp' :
+                                open_data = open_data.resample(time=resample).sum()
+                        else:        
+                            open_data = open_data.resample(time=resample).mean()
 
                     if x_landmask:
                         open_data = xh.extrapolate_land_mask(open_data)
