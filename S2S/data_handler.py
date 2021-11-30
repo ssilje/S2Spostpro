@@ -300,7 +300,7 @@ class LoadLocal:
                             open_data = open_data.sum('time')
                            # open_data = open_data_tmp.assign_coords(time = open_data.time[-1]) # Not sure what should be the valid time for daily accumulated precipi
                             open_data = open_data * 1000 # convert to mm
-                            print(open_data)
+                           # print(open_data)
 
                     if sort_by:
                         open_data = open_data.sortby(sort_by,ascending=True)
@@ -311,6 +311,9 @@ class LoadLocal:
                                     )
 
                     if resample:
+                        print('resample')
+                        print(open_data)
+                        print(resample)
                         if self.label == 'ERA5':
                             if self.var == 'tp' :
                                 open_data = open_data.resample(time=resample).sum()
