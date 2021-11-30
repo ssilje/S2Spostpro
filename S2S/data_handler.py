@@ -319,6 +319,7 @@ class LoadLocal:
                                 open_data = open_data.resample(time=resample).sum()
                         else:        
                             open_data = open_data.resample(time=resample).mean()
+                        print(open_data)
 
                     if x_landmask:
                         open_data = xh.extrapolate_land_mask(open_data)
