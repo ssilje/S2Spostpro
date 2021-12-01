@@ -639,7 +639,11 @@ class Observations:
 
         filename_absolute = self.filename_func('absolute')
         
-        
+        #deleting old stored files
+        if os.path.isfile(self.path+filename_absolute):
+            os.remove(self.path+filename_absolute)
+            
+            
         if self.process or not os.path.exists(self.path+filename_absolute):
 
             print('Process observations')
@@ -682,7 +686,18 @@ class Observations:
         filename_anomalies = self.filename_func('anomalies')
         filename_mean      = self.filename_func('obs_mean')
         filename_std       = self.filename_func('obs_std')
+        
+        #deleting old stored files
+        if os.path.isfile(self.path+filename_anomalies):
+            os.remove(self.path+filename_anomalies)
+            
+        if os.path.isfile(self.path+filename_mean):
+            os.remove(self.path+filename_mean)    
 
+        if os.path.isfile(self.path+filename_std):
+            os.remove(self.path+filename_std)
+            
+            
         if self.process or not os.path.exists(self.path+filename_anomalies):
 
             print('\tCompute climatology')
@@ -751,10 +766,11 @@ class Observations:
         # The years in the file that is stored is not refelcting the name, 
         # so when generating the observations for the hindcast and forecast in the same script, 
         # I get wrong time. I now include a switch that is deleting the file. 
+        # Deleting the files is not working, I still get the wrong time. 
         
         if os.path.isfile(self.path+filename):
             os.remove(self.path+filename)
-            print(self.path+filename)
+          #  print(self.path+filename)
         file.to_netcdf(self.path+filename)
 
     def load(self,filename):
