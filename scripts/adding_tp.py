@@ -10,7 +10,7 @@ import seaborn as sns
 
 from S2S.data_handler import ERA5
 #from S2S.process import Hindcast, Observations, Forecast, Observations_hcfc
-from S2S.process import Hindcast, Observations, Forecast, , Observations_hcfc
+from S2S.process import Hindcast, Observations, Forecast, Observations_hcfc
 
 from S2S.graphics import mae,crps,graphics as mae,crps,graphics
 from S2S import models
@@ -24,7 +24,7 @@ var             = 'tp'
 
 #clabel          = 'K'
 t_start         = (2018,3,1)
-t_end           = (2018,4,1)
+t_end           = (2018,8,1)
 
 
 clim_t_start    = (1999,1,1)
@@ -61,44 +61,32 @@ grid_forecast = Forecast(
                         download=False,
                         split_work=False
                     )
+hc_fc = []
+hc_fc.append(grid_hindcast.data)
+hc_fc.append(grid_forecast.data)
+
+hindcast_full = xr.concat(hc_fc,dim='time') ## stacking the data along month dimension
+hindcast_full = hindcast_full.rename(var)
 
 era = ERA5(high_res=high_res)\
                             .load(var,clim_t_start,clim_t_end,bounds)[var]
 
-## need to have grid_observations_fc first. if grid_observations_hc is first, the date in grid_observations_fc is the same as grid_observations_hc.
-# still something strange with hc fc obs. 
 
-grid_observations_fc = Observations(
+grid_observations = Observations_hcfc(
                                    name='Era',
                                    observations=era,
-                                   forecast=grid_forecast,
+                                   forecast=hindcast_full,
                                    process=True
 )
 
 
-del(era)
-era = ERA5(high_res=high_res)\
-                            .load(var,clim_t_start,clim_t_end,bounds)[var]
-
-
-grid_observations_hc = Observations(
-  name='Era',
-  observations=era,
-  forecast=grid_hindcast,
-  process=True
-)
-## Test på mandag - ser ut som det funkar no, men er litt usikker..
-
-obs = []
-obs.append(grid_observations_hc.data)
-obs.append(grid_observations_fc.data)
-
-obs_full = xr.concat(obs,dim='time') ## stacking the data along month dimension
-obs_full = obs_full.rename(var)
 
 
 
-reanalysis         = xh.assign_validation_time(obs_full)
+
+
+
+reanalysis         = xh.assign_validation_time(grid_observations.data)
 
 
 hindcast           = xh.assign_validation_time(grid_hindcast.data)
