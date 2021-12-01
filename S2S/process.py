@@ -636,11 +636,14 @@ class Observations:
                                 observations.time.max().dt.month.values,
                                 observations.time.max().dt.day.values
                             )
+        print(self.t_start)
+        print(self.t_end)
 
         filename_absolute = self.filename_func('absolute')
         
         #deleting old stored files
         if os.path.isfile(self.path+filename_absolute):
+            print(self.path+filename_absolute)
             os.remove(self.path+filename_absolute)
             
             
@@ -660,28 +663,12 @@ class Observations:
             self.data = self.data.rename(self.var)
             self.data = self.data.drop('validation_time')
 
-            # lon/lat are lost in storage process
-            # if contained in encoding['coordinates']
-          #  print(self.data)
-          #  try: 
-          #      coords = self.data.encoding['coordinates'].split(' ')
-          #  except KeyError:
-          #      pass
-          #  try: 
-          #      coords = self.data.encoding['Coordinates'].split(' ')
-          #  except KeyError:
-          #      pass
-            
-        #    print(coords)
-        #    while 'lon' in coords: coords.remove('lon')
-        #    while 'lat' in coords: coords.remove('lat')
-        #    self.data.encoding['coordinates'] = ' '.join(coords)
 
             self.store(self.data,filename_absolute)
-            #print(self.data)
+            
 
         self.data = self.load(filename_absolute)
-        #print(self.data)
+        
 
         filename_anomalies = self.filename_func('anomalies')
         filename_mean      = self.filename_func('obs_mean')
@@ -774,7 +761,7 @@ class Observations:
         file.to_netcdf(self.path+filename)
 
     def load(self,filename):
-        print(self.path+filename)
+        #print(self.path+filename)
         return xr.open_dataset(self.path+filename)[self.var]
 
 class Grid2Point:
