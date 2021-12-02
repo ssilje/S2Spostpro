@@ -842,6 +842,10 @@ class Observations_hcfc:
                             )
 
         filename_absolute = self.filename_func('absolute_' + self.var)
+        
+        if os.path.isfile(self.path+filename_absolute):
+            #print(self.path+filename_absolute)
+            os.remove(self.path+filename_absolute)
 
         if self.process or not os.path.exists(self.path+filename_absolute):
 
@@ -868,6 +872,17 @@ class Observations_hcfc:
         filename_anomalies = self.filename_func('anomalies_' + self.var)
         filename_mean      = self.filename_func('obs_mean_'  + self.var)
         filename_std       = self.filename_func('obs_std_' + self.var)
+        
+        #deleting old stored files
+        if os.path.isfile(self.path+filename_anomalies):
+            os.remove(self.path+filename_anomalies)
+            
+        if os.path.isfile(self.path+filename_mean):
+            os.remove(self.path+filename_mean)    
+
+        if os.path.isfile(self.path+filename_std):
+            os.remove(self.path+filename_std)
+            
 
         if self.process or not os.path.exists(self.path+filename_anomalies):
 
@@ -934,6 +949,8 @@ class Observations_hcfc:
                     ) + '.nc'
 
     def store(self,file,filename):
+        if os.path.isfile(self.path+filename):
+            os.remove(self.path+filename)
         file.to_netcdf(self.path+filename)
 
     def load(self,filename):
