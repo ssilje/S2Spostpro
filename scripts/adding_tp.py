@@ -80,12 +80,6 @@ grid_observations = Observations_hcfc(
 )
 
 
-
-
-
-
-
-
 reanalysis         = xh.assign_validation_time(grid_observations.data)
 
 
@@ -93,8 +87,13 @@ hindcast           = xh.assign_validation_time(grid_hindcast.data)
 
 
 forecast           = xh.assign_validation_time(grid_forecast.data)
+## Hindcast/Forecast is mm/6h
+## ERA is mm/24h
+## convert to mm/h
 
-
+reanalysis = reanalysis/24 # converting to mm/h
+hindcast = hindcast/6 # converting to mm/h
+forecast = forecast/6 # converting to mm/h
 
 fcc_step = []  
 hcc_step = []
