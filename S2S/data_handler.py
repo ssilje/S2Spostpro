@@ -290,9 +290,9 @@ class LoadLocal:
                                     data_new_temp = data_new_temp.assign_coords(step = lt)
                                 data_new_temp = data_new_temp.assign_coords(step = lt)                             
                                 data_new.append(data_new_temp)   
-                            data = xr.concat(data_new,dim='step')  # Unit mm/6h                                   
+                            open_data = xr.concat(data_new,dim='step')  # Unit mm/6h                                   
                      
-                        open_data = data
+                        #open_data = data
                     elif self.label == 'ERA5':    
                     #if self.label == 'ERA5':
                         if self.var == 'tp' :
