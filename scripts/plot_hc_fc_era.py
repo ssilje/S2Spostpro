@@ -36,7 +36,18 @@ high_res        = False
 steps           = pd.to_timedelta([7, 14, 21, 28, 35, 42],'D')
 #steps           = pd.to_timedelta(np.linspace(1,46,46),'D')
 
-print('\tProcess Forecast')
+print('\tProcess Hindcast')
+grid_hindcast = Hindcast(
+                        var,
+                        t_start,
+                        t_end,
+                        bounds,
+                        high_res=high_res,
+                        steps=steps,  
+                        process=False,
+                        download=False,
+                        split_work=False
+                    )
 #grid_forecast = Forecast(
 #                        var,
 #                        t_start,
@@ -76,17 +87,8 @@ print('\tProcess Hindcast')
 #                        split_work=True
 #                    )
 
-grid_hindcast = Hindcast(
-                        var,
-                        t_start,
-                        t_end,
-                        bounds,
-                        high_res=high_res,
-                        steps=steps,  
-                        process=False,
-                        download=False,
-                        split_work=False
-                    )
+
+
 
 ## Sjekk - dataene blir berre nan. loopen under ser ok ut. 
 hc_fc = []
@@ -412,3 +414,51 @@ for lt in steps:
             ax.set_ylim([-8, 8]) 
             figname = 'HC_FC_step_' + str(lt.days) + '_month_' + str(mf) + '_' + reg + '_full_ens_noERA.png'
             plt.savefig(figname,dpi='figure',bbox_inches='tight')
+            
+            
+
+fdate_m = pd.date_range("20180702", periods=4, freq="7D") # forecasts start Monday   
+fdate_t = pd.date_range("20180705", periods=4, freq="7D") # forecasts start Thursday
+dates_fcycle = fdate_m.union(fdate_t)  
+            
+for lt in dates_fcycle:
+    fc_steps          = forecast_anom.sel(time=lt) #loop through each forecast
+    hc_steps          = hindcast_anom.sel(time=lt)
+    era_steps         = era_anom.sel(time=lt)       
+    
+    
+    for reg in (
+          'Norway',
+        #  'MEU'
+        ):
+            fcdata_sel = fc_steps.sel(lat=slice(int(region[reg]['minlat']),int(region[reg]['maxlat'])), lon=slice(int(region[reg]['minlon']),int(region[reg]['maxlon'])))
+            hcdata_sel = hc_steps.sel(lat=slice(int(region[reg]['minlat']),int(region[reg]['maxlat'])), lon=slice(int(region[reg]['minlon']),int(region[reg]['maxlon'])))
+            eradata_sel = era_steps.sel(lat=slice(int(region[reg]['minlat']),int(region[reg]['maxlat'])), lon=slice(int(region[reg]['minlon']),int(region[reg]['maxlon'])))
+        
+            fcdata_sel = fcdata_sel.mean('lon').mean('lat')
+            hcdata_sel = hcdata_sel.mean('lon').mean('lat')
+            eradata_sel = eradata_sel.mean('lon').mean('lat')
+       
+            fcdata_sel_df = fcdata_sel.drop('step').to_dataframe().reset_index(level = 0,drop=True)
+            hcdata_sel_df = hcdata_sel.drop('step').to_dataframe().reset_index(level = 0,drop=True).reset_index(level = 1,drop=True)
+            eradata_sel_df = eradata_sel.drop('step').to_dataframe().reset_index(level=0,drop=True)
+        
+        
+            pieces = {"fc": fcdata_sel_df, "hc": hcdata_sel_df, "era": eradata_sel_df}
+            result = pd.concat(pieces)
+            plot_df = result.reset_index(level=0).rename(columns={'level_0':'product'})
+        
+        
+            plt.close()
+        
+            my_pal = {"fc": "g", "hc": "b", "era":"k"}
+        
+        
+            fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(6, 6), sharey=True)
+            ax = sns.boxplot(x="validation_time", y="t2m", data=plot_df,hue='product', ax=axes, palette=my_pal)
+            x_dates = plot_df['validation_time'].dt.strftime('%m-%d').sort_values().unique()
+            ax.set_xticklabels(labels=x_dates, rotation=45, ha='right')
+            ax.set_ylim([-8, 8]) 
+            figname = 'HC_FC_step_' + lt.strftime('%Y-%m-%d') + '_month_' + '_t2m' + '.png'
+            plt.savefig(figname,dpi='figure',bbox_inches='tight')
+        
