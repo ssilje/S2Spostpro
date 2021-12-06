@@ -293,12 +293,14 @@ class LoadLocal:
                             data = xr.concat(data_new,dim='step')  # Unit mm/6h                                   
                      
                         open_data = data
-                        
-                    if self.label == 'ERA5':
+                    else if self.label == 'ERA5':    
+                    #if self.label == 'ERA5':
                         if self.var == 'tp' :
                             print('converting from m to mm')
                             open_data = open_data * 1000 # convert to mm
-                           
+                            
+                    else : 
+                        open_data = open_data
 
                     if sort_by:
                         open_data = open_data.sortby(sort_by,ascending=True)
