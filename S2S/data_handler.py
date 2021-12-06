@@ -293,7 +293,7 @@ class LoadLocal:
                             data = xr.concat(data_new,dim='step')  # Unit mm/6h                                   
                      
                         open_data = data
-                    else if self.label == 'ERA5':    
+                    elif self.label == 'ERA5':    
                     #if self.label == 'ERA5':
                         if self.var == 'tp' :
                             print('converting from m to mm')
