@@ -17,6 +17,27 @@ import S2S.xarray_helpers    as xh
 from S2S.scoring import uncentered_acc, centered_acc
 from S2S.local_configuration import config
 
+def plot_months(
+        varplot,
+        levels_plot,
+        label_text,
+        levels_cbar,
+        plot_title,
+        plot_save,
+):
+
+
+def pick_landpoints(
+  data
+
+):
+  # send the input as grid_hindcast/grid_forecast/grid_obs
+  
+    land_sea_mask = xr.open_dataset('/nird/projects/NS9853K/DATA/S2S/fx/ECMWF_land_sea_mask1_5.grib')
+    new_land_sea_mask = land_sea_mask.sel(latitude=grid_hindcast.data.lat.values).sel(longitude=grid_hindcast.data.lon.values)
+    lsm_masked_v2 = new_land_sea_mask.where(new_land_sea_mask['lsm'] != 0.) #--> der det er null blir det nan
+
+
 
 bounds          = (0,28,55,75)
 var             = 'tp'
@@ -91,9 +112,9 @@ forecast           = xh.assign_validation_time(grid_forecast.data)
 ## ERA is mm/24h
 ## convert to mm/h
 
-reanalysis = reanalysis/24 # converting to mm/h
-hindcast = hindcast/6 # converting to mm/h
-forecast = forecast/6 # converting to mm/h
+#reanalysis = reanalysis/24 # converting to mm/h
+#hindcast = hindcast/6 # converting to mm/h
+#forecast = forecast/6 # converting to mm/h
 
 #reanalysis = reanalysis.sel(time='2018') 
 
@@ -183,7 +204,8 @@ for lt in steps:
             hcc_member = xr.concat(hcc,dim='member')    
             hcc_day.append(hcc_member)
             
-            re_anom = redata_m - redata_m.mean('time')  
+            re_anom = redata_m - redata_m.mean('time') 
+            re_anom = re_anom.assign_coords(year=yyh)
             rcc_day.append(re_anom)
             
         fcc_member_day = xr.concat(fcc_day,dim='time')
@@ -207,10 +229,12 @@ for lt in steps:
     
     
 era_anom = xr.concat(re_step,dim='step')
+era_anom_all = xr.concat(re_step,dim='step')
 era_anom = era_anom.sel(time='2018')
 forecast_anom = xr.concat(fcc_step,dim='step')
 hindcast_anom = xr.concat(hcc_step,dim='step') 
 hindcast_anom = xh.assign_validation_time(hindcast_anom)
+
 
 
 fdate_m = pd.date_range("20180702", periods=4, freq="7D") # forecasts start Monday   
@@ -220,7 +244,8 @@ dates_fcycle = fdate_m.union(fdate_t)
 for lt in dates_fcycle:
     fc_steps          = forecast_anom.sel(time=lt) #loop through each forecast
     hc_steps          = hindcast_anom.sel(time=lt)
-    era_steps         = era_anom.sel(time=lt)       
+    era_steps         = era_anom.sel(time=lt)   
+    
     
     
     for reg in (
@@ -254,8 +279,8 @@ for lt in dates_fcycle:
             ax = sns.boxplot(x="validation_time", y="tp", data=plot_df,hue='product', ax=axes, palette=my_pal)
             x_dates = plot_df['validation_time'].dt.strftime('%m-%d').sort_values().unique()
             ax.set_xticklabels(labels=x_dates, rotation=45, ha='right')
-            ax.set_ylim([-1, 1]) 
-            figname = 'HC_FC_step_' + lt.strftime('%Y-%m-%d') + '_month_' + str(mf) + '.png'
+            ax.set_ylim([-8, 8]) 
+            figname = 'HC_FC_step_' + lt.strftime('%Y-%m-%d') + '_month_' + str(mf) + 'test_.png'
             plt.savefig(figname,dpi='figure',bbox_inches='tight')
         
         
