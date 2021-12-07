@@ -200,14 +200,18 @@ for lt in steps:
                 hcc_m_year = xr.concat(hcc_year,dim='year')
                 
                 hc_member_anom = hcc.append(hcc_m_year)
+                
+                
             
             hcc_member = xr.concat(hcc,dim='member')    
             hcc_day.append(hcc_member)
             
-            re_anom = redata_m - redata_m.mean('time') 
-            re_anom = re_anom.assign_coords(year=yyh)
-            rcc_day.append(re_anom)
             
+            
+           
+            re_anom = redata_m - redata_m.mean('time')      
+            rcc_day.append(re_anom)   
+                
         fcc_member_day = xr.concat(fcc_day,dim='time')
         fcc_month.append(fcc_member_day)
         
@@ -230,6 +234,16 @@ for lt in steps:
     
 era_anom = xr.concat(re_step,dim='step')
 era_anom_all = xr.concat(re_step,dim='step')
+
+dim                 = 'validation_time.day'
+era_anom_day        = list(era_anom_all.groupby(dim))
+#era_anom_day = []
+for mm,(mmf,eraa) in enumerate(era_anom_day): #loop through each month
+    era_anom_years = list(eraa.groupby('validation_time.year'))
+    era_year = []
+        
+    for yy,(yyh,hcdata_year) in enumerate(hcdata_m_years): #loop through each year
+
 era_anom = era_anom.sel(time='2018')
 forecast_anom = xr.concat(fcc_step,dim='step')
 hindcast_anom = xr.concat(hcc_step,dim='step') 
