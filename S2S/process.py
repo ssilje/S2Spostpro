@@ -15,6 +15,8 @@ import S2S.handle_datetime   as dt
 
 class Hindcast:
     """
+    @author: Henrik Auestad
+    
     Loads hindcast from S2S database, computes weekly means and then provides
         self.data:      the absolute values of the hindcast (xarray.DataArray)
         self.data_a:    the anomlies of the data relative to model climatology
@@ -572,6 +574,8 @@ class Forecast:
 
 class Observations:
     """
+    @author: Henrik Auestad
+    
     Stacks observations along step (lead time) dimension to match forecast
     for matrix operations. Further computes climatology using a 30-day running
     window with cross validation (leaving out the current year). Produces:
@@ -732,6 +736,8 @@ class Observations:
 
 class Grid2Point:
     """
+    @author: Henrik Auestad
+    
     Class rountine correlation() returns a forecast (process.Hindcast like)
     with corresponding dimensions to observations.
     The routine selects the highest correlated (Pearson) gridpoint to represent
