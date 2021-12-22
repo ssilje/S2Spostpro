@@ -14,7 +14,9 @@ from . import date_to_model as d2m
 
 class Archive:
     """
-    Returns local paths and filename functions
+    @author: Henrik Auestad
+    
+    A class to keep track of information, returns local paths and filename functions
     """
 
     def __init__(self):
@@ -35,6 +37,9 @@ class Archive:
 
     @staticmethod
     def ERA5_in_filename(**kwargs):
+        """
+        Returns filename to load from the ERA database
+        """
 
         var  = kwargs['var']
         date = kwargs['date']
@@ -82,6 +87,9 @@ class Archive:
 
     @staticmethod
     def BW_in_filename(**kwargs):
+        """
+        Returns filename to load from the Barentswatch database
+        """
 
         location = kwargs['location']
 
@@ -89,6 +97,9 @@ class Archive:
 
     @staticmethod
     def out_filename(var,start,end,bounds,label):
+        """
+        Returns filename to store processed files
+        """
         return '%s_%s-%s_%s_%s%s'%(
                             var,
                             dt.to_datetime(start).strftime('%Y-%m-%d'),
@@ -111,6 +122,8 @@ class Archive:
 
 class LoadLocal:
     """
+    @author: Henrik Auestad
+    
     Base class for loading local data
     """
 
@@ -309,6 +322,16 @@ class LoadLocal:
                 prnt=True,
                 x_landmask=False
             ):
+        """
+        args:
+            var:        variable to load, string
+            start_time: time to start loading tuple, datetime.datetime or pd.Timestamp 
+            end_time:   time to end loading   tuple, datetime.datetime or pd.Timestamp 
+            bounds:     lat/lon domain to load tuple of floats or ints: (lon1,lon2,lat1,lat2)
+            download:   if True or no temporary file exists, start loading from scratch, bool
+            prnt:       print progress
+            x_landmask: interpoolate during loading (consider depricated)
+        """
 
         archive = Archive()
 
@@ -359,6 +382,13 @@ class LoadLocal:
         return xr.open_dataset(self.out_path+self.out_filename)
 
 class ERA5(LoadLocal):
+    """
+    ERA5 shell for LoadLocal, built-in specs for loading ERA5
+    
+    args: 
+        high_res: only for var='sst', if True 05deg grid is choosen
+                  otherwise 1.5deg, bool
+    """
 
     def __init__(self,high_res=False):
 
@@ -382,6 +412,13 @@ class ERA5(LoadLocal):
         self.out_path                            = config['VALID_DB']
 
 class ECMWF_S2SH(LoadLocal):
+    """
+    ECMWF S2S shell for LoadLocal, built-in specs for loading hindcast
+    
+    args: 
+        high_res: only for var='sst', if True 05deg grid is choosen
+                  otherwise 1.5deg, bool
+    """
 
     def __init__(self,high_res=False):
 
@@ -405,6 +442,13 @@ class ECMWF_S2SH(LoadLocal):
         self.out_path                            = config['VALID_DB']
 
 class ECMWF_S2SF(LoadLocal):
+    """
+    ECMWF S2S shell for LoadLocal, built-in specs for loading forecast
+    
+    args: 
+        high_res: only for var='sst', if True 05deg grid is choosen
+                  otherwise 1.5deg, bool
+    """
 
     def __init__(self,high_res=False):
 
@@ -428,6 +472,10 @@ class ECMWF_S2SF(LoadLocal):
         self.out_path                            = config['VALID_DB']
 
 class BarentsWatch:
+    """
+    @author: Henrik Auestad
+    Class to load Barentswatch data
+    """
 
     def __init__(self,prnt=True):
 
@@ -446,6 +494,13 @@ class BarentsWatch:
         self.path['DATA'] = config['BW']
 
     def load(self,location,no=400,data_label='DATA'):
+        """
+        args:
+            location: names of locations to load, list of strings e.g. ['Hisdalen'] or 'all'
+                      if 'all' is given, no is the number of required non.nan obs of the stations to
+                      be loaded.
+            no:       int, see above
+        """
 
         if location=='all':
             location = self.all_locs(number_of_observations=no)
@@ -507,6 +562,10 @@ class BarentsWatch:
         return open_data
 
 class IMR:
+    """
+    @author: Henrik Auestad
+    Consider removing
+    """
 
     def __init__(self):
 
