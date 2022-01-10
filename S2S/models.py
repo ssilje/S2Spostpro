@@ -12,6 +12,7 @@ import S2S.xarray_helpers as xh
 
 def clim_fc(mean,std,r=1):
     """
+    @author: Henrik Auestad
     Combines mean and std along a member dimension
 
     args:
@@ -27,6 +28,7 @@ def clim_fc(mean,std,r=1):
 
 def deterministic_gaussian_forecast(mean,std):
     """
+    @author: Henrik Auestad
     Generate random deterministic forecast of same dimensions as mean and std.
     Mean and std must have identical shape/dims.
 
@@ -54,6 +56,7 @@ def bias_adjustment_torralba(
                                 cluster_name=None
                             ):
     """
+    @author: Henrik Auestad
     Forecast calibration as of Eq. 2-4 in Torralba et al. (2017).
 
     References:
@@ -129,7 +132,20 @@ def bias_adjustment_torralba(
 
 def persistence(init_value,observations,window=30):
     """
+    @author: Henrik Auestad
+    
+    Fits a persistence forecast to the observations at initalization time (init_value)
+    predicting observations using cross validation.
+    
     Input must be anomlies.
+    
+    args:
+        init_value:     xarray.DataArray with time dimension, must be broadcasted to fit observations.
+        observations:   xarray.DataArray with time dimension
+        window:         default 30, number of consequtive days used for fitting
+        
+    returns:
+       fitted model:   xarray.DataArray
     """
 
     print('\tmodels.persistence()')
@@ -173,7 +189,24 @@ def combo(
             cluster_name=None
         ):
     """
-    Input must be anomalies.
+    @author: Henrik Auestad
+    
+    Fits a combination of persistence and model forecast to the observations
+    predicting observations using cross validation.
+    
+    Input must be anomlies.
+    
+    args:
+        init_value:     xarray.DataArray with time dimension, must be broadcasted to fit observations.
+        model:          xarray.DataArray
+        observations:   xarray.DataArray with time dimension
+        window:         default 30, number of consequtive days used for fitting
+        lim:            min number of observation - predictior pairs for fitting
+        sub:            sub-value if fitting fails
+        cluster_name:   If not None, fitting is done over this dimension in addition to the time dimension. Dimensions are kept.
+        
+     returns:
+        fitted model:   xarray.DataArray
     """
 
     if cluster_name:
@@ -233,13 +266,16 @@ def combo(
 ################################################################################
 def correlation_CV(x,y,index,window=30):
     """
-    Computes correlation of x against y (rho), keeping dim -1 and -2.
+    @author: Henrik Auestad
+    
+    Computes correlation of x against y (Pearson), keeping dim -1 and -2.
     Dim -1 must be 'dayofyear', with the corresponding days given in index.
     Dim -2 must be 'year'.
 
     args:
         x:      np.array of float, with day of year as index -1 and year as
                 index -2
+        y:      like x
         index:  np.array of int, 1-dimensional holding dayofyear corresponding
                 to dim -1 of x
 
@@ -306,23 +342,11 @@ def correlation_CV(x,y,index,window=30):
 
 def std(x,index,window=30):
     """
+    @author: Henrik Auestad
+    
     Computes std of x, keeping dim -1 and -2.
     Dim -1 must be 'dayofyear', with the corresponding days given in index.
     Dim -2 must be 'year'.
-clim_fc = models.clim_fc(point_observations.mean,point_observations.std)
-pers    = models.persistence(
-                init_value   = point_observations.init_a,
-                observations = point_observations.data_a
-                )
-
-graphics.timeseries(
-                        observations    = point_observations.data_a,
-                        cast            = [pers,point_hindcast.data_a],
-                        lead_time       = [9,16],
-                        clabs           = ['persistence','EC'],
-                        filename        = 'BW_persistence',
-                        title           = 'Barentswatch EC'
-                    )
 
     args:
         x:      np.array of float, with day of year as index -1 and year as
@@ -368,6 +392,8 @@ graphics.timeseries(
 
 def running_regression_CV(x,y,z,index,window=30,lim=1,sub=np.nan):
     """
+    @author: Henrik Auestad
+    
     Fits linear regression model: z = a * x + b * y, keeping dim -1 and -2.
     Dim -1 must be 'dayofyear', with the corresponding days given in index.
     Dim -2 must be 'year'.
@@ -377,6 +403,7 @@ def running_regression_CV(x,y,z,index,window=30,lim=1,sub=np.nan):
                 index -2
         index:  np.array of int, 1-dimensional holding dayofyear corresponding
                 to dim -1 of x
+        lim:    min sample size for fitting
 
     returns
         rho:   np.array of float, with day of year as index -1 and year as
@@ -482,6 +509,8 @@ def regression1D(x,y):
 
 def regression2D(x1,x2,y):
     """
+    @author: Henrik Auestad
+    
     Returns fitted coeffs by OLS for model
         y = intercept +slope1*x1 + slope2*x2 + residuals
 
@@ -520,6 +549,7 @@ def regression2D(x1,x2,y):
 ################################################################################
 ############################# Depricated #######################################
 ################################################################################
+# Can be removed
 def persistence3(predictor,response,var,dim='time.dayofyear'):
     """
     Not very elegant and probably not particularly cheap
