@@ -4,6 +4,9 @@ from datetime import datetime
 import numpy as np
 import xarray as xr
 
+
+
+
 def persistence(init_value,observations,window=30):
     """
     @author: Henrik Auestad
@@ -199,6 +202,10 @@ def o_climatology(da,window=30):
             output_core_dims = [['year','dayofyear'],['year','dayofyear']],
             vectorize=True
         )
+    
+    ###### Question #####
+    # do we need running_clim_CV in forecast mode? I tried to use running_clim, but got some dimesion errors. 
+    
     #mean,std = xr.apply_ufunc(
     #        running_clim, da, da.dayofyear,window,
     #        input_core_dims  = [['year','dayofyear'],['dayofyear'],[]],
@@ -206,6 +213,7 @@ def o_climatology(da,window=30):
     #        vectorize=True
     #    )    
 
+    
     # re-assing time dimension to da from year,dayofyear
     return stack_time(mean),stack_time(std)
 
@@ -357,26 +365,37 @@ def stack_time(da):
     da = da.assign_coords(time=time)
 
     return da
-##### Program starts 
 
 
-dates = pd.date_range("20100101", "20200101", freq="D")
-ds_date = xr.Dataset({"time": dates})
+
+#######################################################
+##### ##### ##### Program starts ##### ##### #####
 
 steps    = pd.to_timedelta([7,14,21,28,35],'D')
 ds_step = xr.Dataset({"step": steps})
 
 
+# make a dummy teperature dataset with daily values the past 10 years. The last time is the time it should be made forecast from. 
 
-s = np.random.uniform(0,10,dates.size)
+dates = pd.date_range("20100101", "20200101", freq="D")
+ds_date = xr.Dataset({"time": dates})
+
+s = np.random.uniform(0,10,dates.size) # values between 0 and 10
+
 d = {'sst'     : s,
         'time'  : dates}
+
 df = pd.DataFrame(d)
 df.index = df["time"]
 del df["time"]
 
 data = df.to_xarray()
+
+# Calculating running means. Question: the timeseries is still with daily output. Should it be with 7 days interval?
+
 data_rolling=data.rolling(time=7,center=True).mean()
+
+
 print('\tAssign step dimension to observations')
 
 ## make data with step dimension
@@ -386,29 +405,34 @@ data_step = at_validation(
     ds_date.time + ds_step.step,
     ddays=1)
 
-#data_step = data_step.rename('sst')
-data_step = data_step.drop('validation_time')
 
+data_step = data_step.drop('validation_time') # Needed to do? 
 
 print('\tCompute climatology')
 
 data_step_mean,data_step_std = o_climatology(data_step)
-#self.mean = self.mean.rename(self.var)
-#self.std  = self.std.rename(self.var)
 
-# the unstack_time and stack_time is changing the order (and length of time)
+# the unstack_time and stack_time is changing the order (and length of time). 
+# So need to do this on the data_step to get the same order as the data_step_mean and data_step_std
+
 data_step= unstack_time(data_step)
 data_step = stack_time(data_step)
 data_step_a = ( data_step - data_step_mean ) / data_step_std
-#data_step_a = assign_validation_time(data_step_a)
 
+# make a dummy teperature dataset with daily values the pnext 46 days. 
+# The last time from the obeerved temperature is the time it should be made forecast from. 
 
 dates_fc = pd.date_range(dates[-1].strftime("%m%d%y"), periods=46, freq="D")
 ds_fc_date = xr.Dataset({"time": dates_fc})
 s = np.empty(dates_fc.shape)
 s[:] = np.NaN
-#what climatology to use when calculation the anomalies
+
+# Question: what climatology to use when calculation the anomalies. This is the inital time to be made forecast from
+
+# set the inital temperature anomaly 
+
 s[0] = (data.sst.sel(time=dates[-1]).values - data_step_mean.sst.sel(time='2020-12-31',step='7 days').values) / data_step_std.sst.sel(time='2020-12-31',step='7 days').values
+
 d = {'sst'     : s,
         'time'  : dates_fc}
 
@@ -419,18 +443,21 @@ df.index = df["time"]
 del df["time"]
 data_fc = df.to_xarray()
 
+
+# make the forecast with step dimension. This is removing the inital time value..? how to fix this?
+
 data_fc_step = at_validation(
     data_fc,
     ds_fc_date.time + ds_step.step,
     ddays=1)
 data_fc_step = data_fc_step.drop('validation_time')
 
+
+# Not working now. The persistence model must be changed to be in forecast mode
+
 pers  = persistence(
   init_value   = data_fc_step.sst,
   observations = data_step_a.sst
 )
-
-#data_step = data_step.rename('sst')
-#data_step = data_step.drop('validation_time')
 
 
