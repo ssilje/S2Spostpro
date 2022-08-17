@@ -74,19 +74,11 @@ class HC:
 
 def main():
 
-    hc = HC()
-
     path    = "/projects/NS9853K/DATA/tmp/"
     nk_path = path + "norkyst_at_locations_hardanger_stationary_kindex.nc"
 
     with xr.open_dataarray(nk_path) as norkyst:
         norkyst = norkyst.sortby("time")
-        #norkyst = norkyst.drop("nk_lat")
-        #norkyst = norkyst.drop("nk_lon")
-
-    print(norkyst)
-    print(np.ones_like(norkyst.values).sum())
-    print(np.isfinite(norkyst.values).sum())
 
     print('Norkyst: roll')
     norkyst = norkyst.rolling(time=7,center=True).mean()
@@ -98,7 +90,7 @@ def main():
         name='norkyst_at_locations_hardanger_stacked_and_processed',
         observations=norkyst,
         forecast=hindcast,
-        process=False
+        process=True
     )
 
     # COMBO MODEL
