@@ -18,6 +18,8 @@ import S2S.scoring as sc
 from matplotlib.colors import BoundaryNorm
 import seaborn as sns
 
+tpath = '/projects/NS9853K/DATA/norkyst800/processed/'
+
 def loc(name):
     return str(location_cluster.loc_from_name(name))
 
@@ -150,7 +152,7 @@ def go():
                 )
 
                 ax.set_extent(extent, crs=ccrs.PlateCarree())
-                ax.coastlines(resolution=resol,linewidth=0.1)
+                ax.coastlines(resolution=resol,linewidth=0.1,zorder=40)
                 # land = cfeature.NaturalEarthFeature('physical', 'land', \
                 #     scale=resol, edgecolor='k', facecolor=cfeature.COLORS['land']
                 # )
@@ -211,8 +213,8 @@ def go_combo_data():
     high_res = True
     steps    = pd.to_timedelta([9,16,23,30,37],'D')
 
-    clim_t_start  = (2000,6,15)
-    clim_t_end    = (2020,8,25)
+    clim_t_start  = (2012,6,27)
+    clim_t_end    = (2019,2,26)
 
     print('Get hindcast')
     hindcast = Hindcast(
@@ -244,10 +246,14 @@ def go_combo_data():
         name='ERA_the_whole_coast',
         observations=era,
         forecast=hindcast,
-        process=False
+        process=True
     )
 
     del era
+
+    crps_ref = xs.crps_gaussian(observations.data_a,mu=0,sig=1,dim=[])
+    crps_ref.to_netcdf(tpath+'go_combo_crps_ref_unit_var.nc')
+    del crps_ref
 
     print('Fit combo model')
     combo = models.combo(
@@ -259,22 +265,23 @@ def go_combo_data():
     combo = hindcast.data_a - hindcast.data_a.mean('member') + combo
 
     # adjust spread
-    combo = models.bias_adjustment_torralba(
-                                forecast        = combo,
-                                observations    = observations.data_a,
-                                spread_only     = True
-                                )
+    # combo = models.bias_adjustment_torralba(
+    #                            forecast        = combo,
+    #                             observations    = observations.data_a,
+    #                             spread_only     = True
+    #                             )
 
     print('Calculate CRPS')
     crps_co  = sc.crps_ensemble(observations.data_a,combo,fair=True)
     crps_fc  = sc.crps_ensemble(observations.data_a,hindcast.data_a,fair=True)
-    crps_ref = xs.crps_gaussian(observations.data_a,mu=0,sig=1,dim=[])
 
-    crps_co.to_netcdf('go_combo_crps_co.nc')
-    crps_fc.to_netcdf('go_combo_crps_fc.nc')
-    crps_ref.to_netcdf('go_combo_crps_ref.nc')
+    crps_co.to_netcdf(tpath+'go_combo_crps_co_unit_var.nc')
+    crps_fc.to_netcdf(tpath+'go_combo_crps_fc_unit_var.nc')
+
 
 def go_combo():
+
+    extent = [4.25,6.75,59.3,61.]
 
     steps    = pd.to_timedelta([9,16,23,30,37],'D')
 
@@ -288,13 +295,15 @@ def go_combo():
     winter_months  = ['10','11','12','01','02','03']
     summer_months  = ['04','05','06','07','08','09']
 
-    crps_co = xr.open_dataset('go_combo_crps_co.nc').rename(dict(__xarray_dataarray_variable__='crps')).crps
-    crps_fc = xr.open_dataset('go_combo_crps_fc.nc').sst.rename('crps')
-    crps_ref = xr.open_dataset('go_combo_crps_ref.nc').rename(dict(__xarray_dataarray_variable__='crps')).crps
+    crps_co = xr.open_dataset(tpath+'go_combo_crps_co_unit_var.nc').rename(dict(__xarray_dataarray_variable__='crps')).crps
+    crps_fc = xr.open_dataset(tpath+'go_combo_crps_fc_unit_var.nc').sst.rename('crps')
+    crps_ref = xr.open_dataset(tpath+'go_combo_crps_ref_unit_var.nc').rename(dict(__xarray_dataarray_variable__='crps')).crps
+
+    crps_co,crps_fc,crps_ref = xr.align(crps_co,crps_fc,crps_ref)
 
     resol  = '10m'
     t_alt  = 'two-sided'
-    extent = [0,28,55,75]
+    extent = [4.25,6.75,59.3,61.]
 
 
     print('Combo against ERA')
@@ -324,7 +333,7 @@ def go_combo():
                 alternative=t_alt,
                 welch=True
             )
-            
+
             pmap = wilks.xsignificans_map(pval,alpha_FDR=0.2)
 
             ss = 1 - (score_fc.groupby('time.year').mean(skipna=True) /\
@@ -335,7 +344,7 @@ def go_combo():
 
                 pcoords = pmap.sel(step=step).stack(point=('lon','lat'))
                 pcoords = pcoords.where(xr.ufuncs.isfinite(pcoords),drop=True)
-
+                print(month,step,np.isfinite(ss.sel(step=step)).values.sum() )
                 cs = ax.contourf(
                     ss.lon,
                     ss.lat,
@@ -361,7 +370,7 @@ def go_combo():
                 )
 
                 ax.set_extent(extent, crs=ccrs.PlateCarree())
-                ax.coastlines(resolution=resol,linewidth=0.1)
+                ax.coastlines(resolution=resol,linewidth=0.1,zorder=40)
                 # land = cfeature.NaturalEarthFeature('physical', 'land', \
                 #     scale=resol, edgecolor='k', facecolor=cfeature.COLORS['land']
                 # )
@@ -399,7 +408,112 @@ def go_combo():
         cbar.ax.set_title('COMBO')
         cbar.ax.set_xlabel('Clim')
         fig.suptitle('CRPSS    SST: COMBO against ERA5')
-        graphics.save_fig(fig,'paper/map_'+mlabel+t_alt+'_combo_era')
+        latex.save_figure(fig,'/nird/home/heau/figures_paper/fig7_'+mlabel)
+
+    print('EC against ERA')
+    for mlabel,months in zip(['winter','summer'],[winter_months,summer_months]):
+
+        latex.set_style(style='white')
+        fig,axes = plt.subplots(6,5,\
+            figsize=latex.set_size(width=345,subplots=(6,2),fraction=0.95),\
+            subplot_kw=dict(projection=ccrs.NorthPolarStereo())
+        )
+
+        # cmap   = sns.color_palette("Spectral", as_cmap=True)
+        cmap   = latex.skill_cmap().reversed()
+        levels = [-0.5,-0.4,-0.3,-0.2,-0.1,-0.05,0.05,0.1,0.2,0.3,0.4,0.5]
+        norm   = BoundaryNorm(levels,cmap.N)
+
+        for ax_month,month,row in zip(axes,months,range(len(months))):
+
+            score_fc  = crps_fc.where(crps_fc.time.dt.month==int(month),drop=True)
+            score_ref = crps_ref.where(crps_ref.time.dt.month==int(month),drop=True)
+
+            # Two sided t-test for annual means of crps_fc and crps_ref
+            dist,pval = sc.ttest_upaired(
+                score_fc.groupby('time.year').mean(skipna=True),
+                score_ref.groupby('time.year').mean(skipna=True),
+                dim=['year'],
+                alternative=t_alt,
+                welch=True
+            )
+
+            pmap = wilks.xsignificans_map(pval,alpha_FDR=0.2)
+
+            ss = 1 - (score_fc.groupby('time.year').mean(skipna=True) /\
+                score_ref.groupby('time.year').mean(skipna=True)
+            ).mean('year').transpose('lat','lon','step')
+
+            for ax,step,col in zip(ax_month,steps,range(len(steps))):
+
+                pcoords = pmap.sel(step=step).stack(point=('lon','lat'))
+                pcoords = pcoords.where(xr.ufuncs.isfinite(pcoords),drop=True)
+
+                cs = ax.contourf(
+                    ss.lon,
+                    ss.lat,
+                    ss.sel(step=step),
+                    levels=levels,
+                    cmap=cmap,
+                    norm=norm,
+                    transform=ccrs.PlateCarree(),
+                    zorder=5,
+                    extend='both'
+                )
+
+                ax.scatter(
+                    pcoords.lon,
+                    pcoords.lat,
+                    c='k',
+                    marker='+',
+                    s=0.1,
+                    alpha=0.95,
+                    transform=ccrs.PlateCarree(),
+                    zorder=30,
+                    linewidth=0.2
+                )
+
+                ax.set_extent(extent, crs=ccrs.PlateCarree())
+                ax.coastlines(resolution=resol,linewidth=0.1,zorder=40)
+                # land = cfeature.NaturalEarthFeature('physical', 'land', \
+                #     scale=resol, edgecolor='k', facecolor=cfeature.COLORS['land']
+                # )
+                # ax.add_feature(land, zorder=1, facecolor='beige', linewidth=0.2)
+
+                if row==len(months)-1:
+                    ax.text(0.5, -0.2, str(step.days),
+                        size = 'xx-large',
+                        va='bottom',
+                        ha='center',
+                        rotation='horizontal',
+                        rotation_mode='anchor',
+                        transform=ax.transAxes
+                    )
+                    print(str(step.days))
+                if col==0:
+                    ax.text(-0.07, 0.55, mparser[str(int(month))],
+                        size = 'xx-large',
+                        va='bottom',
+                        ha='center',
+                        rotation='vertical',
+                        rotation_mode='anchor',
+                        transform=ax.transAxes
+                    )
+                    print(mparser[str(int(month))])
+
+        cbar=fig.colorbar(
+            cs,
+            ax=axes.ravel().tolist(),
+            fraction=0.046,
+            pad=0.04
+        )
+        cbar.set_ticks(levels)
+        cbar.set_ticklabels(levels)
+        cbar.ax.set_title('EC')
+        cbar.ax.set_xlabel('Clim')
+        fig.suptitle('CRPSS    SST: EC against ERA5')
+        latex.save_figure(fig,'/nird/home/heau/figures_paper/fig6_'+mlabel)
+
 
     print('Combo against EC')
     for mlabel,months in zip(['winter','summer'],[winter_months,summer_months]):
@@ -464,7 +578,7 @@ def go_combo():
                 )
 
                 ax.set_extent(extent, crs=ccrs.PlateCarree())
-                ax.coastlines(resolution=resol,linewidth=0.1)
+                ax.coastlines(resolution=resol,linewidth=0.1,zorder=40)
                 # land = cfeature.NaturalEarthFeature('physical', 'land', \
                 #     scale=resol, edgecolor='k', facecolor=cfeature.COLORS['land']
                 # )
@@ -502,7 +616,9 @@ def go_combo():
         cbar.ax.set_title('COMBO')
         cbar.ax.set_xlabel('EC')
         fig.suptitle('CRPSS    SST: COMBO against EC predicting ERA5')
-        graphics.save_fig(fig,'paper/map_'+mlabel+t_alt+'combo_ec')
+        graphics.save_fig(fig,'u_var/map_'+mlabel+t_alt+'combo_ec_unit_var')
+
+
 
 def combo():
 
@@ -659,7 +775,7 @@ def combo():
                 # )
 
                 ax.set_extent(extent, crs=ccrs.PlateCarree())
-                ax.coastlines(resolution=resol,linewidth=0.1)
+                ax.coastlines(resolution=resol,linewidth=0.1,zorder=40)
                 # land = cfeature.NaturalEarthFeature('physical', 'land', \
                 #     scale=resol, edgecolor='k', facecolor=cfeature.COLORS['land']
                 # )
@@ -767,7 +883,7 @@ def combo():
                 # )
 
                 ax.set_extent(extent, crs=ccrs.PlateCarree())
-                ax.coastlines(resolution=resol,linewidth=0.1)
+                ax.coastlines(resolution=resol,linewidth=0.1,zorder=40)
                 # land = cfeature.NaturalEarthFeature('physical', 'land', \
                 #     scale=resol, edgecolor='k', facecolor=cfeature.COLORS['land']
                 # )
@@ -881,7 +997,7 @@ def var():
                 )
 
                 ax.set_extent(extent, crs=ccrs.PlateCarree())
-                ax.coastlines(resolution=resol,linewidth=0.1)
+                ax.coastlines(resolution=resol,linewidth=0.1,zorder=40)
                 # land = cfeature.NaturalEarthFeature('physical', 'land', \
                 #     scale=resol, edgecolor='k', facecolor=cfeature.COLORS['land']
                 # )
@@ -1016,7 +1132,7 @@ def dvar():
                 )
 
                 ax.set_extent(extent, crs=ccrs.PlateCarree())
-                ax.coastlines(resolution=resol,linewidth=0.1)
+                ax.coastlines(resolution=resol,linewidth=0.1,zorder=40)
                 # land = cfeature.NaturalEarthFeature('physical', 'land', \
                 #     scale=resol, edgecolor='k', facecolor=cfeature.COLORS['land']
                 # )

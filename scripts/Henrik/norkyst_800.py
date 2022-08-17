@@ -267,6 +267,51 @@ def check_empty():
         except FileNotFoundError:
             print('FileNotFoundError: ',out_filename.split('/')[-1])
 
+def assign_bw_coords():
+
+    coords = BarentsWatch().load('all',no=0).isel(time=0).location
+    coords = coords.drop('time')
+
+    path      = config['NORKYST']
+    filenames = glob.glob(path+'*_atBW.nc')
+
+    for filename in filenames:
+        data = xr.open_dataset(filename)
+        data = data.assign_coords(location=coords.sel(location=data.location))
+
+        o_filename = filename[:-3]+'c.nc'
+        data.to_netcdf(o_filename)
+
+def get_hardanger():
+
+    path      = config['NORKYST']
+    filenames = glob.glob(path+'*_atBWc.nc')
+    extent    = [4.5,7.1,59.3,61]
+
+    for filename in filenames:
+
+        o_filename = filename.split('/')
+        o_filename.insert(-1, 'hardanger')
+        o_filename = '/'.join(o_filename)
+
+        data = xr.open_dataset(filename)
+
+        data = data.where(extent[0] < data.lon, drop=True)
+        data = data.where(extent[2] < data.lat, drop=True)
+
+        data = data.where(extent[1] > data.lon, drop=True)
+        data = data.where(extent[3] > data.lat, drop=True)
+
+        data.to_netcdf(o_filename)
+        print(o_filename)
+
+def stack_hardanger():
+
+    path      = '/projects/NS9853K/DATA/norkyst800/processed/hardanger/'
+    filenames = glob.glob(path+'*_atBWc.nc')
+
+    data = xr.open_mfdataset(filenames,concat_dim='time')
+    data.to_netcdf(path+'norkyst800_sst_daily_mean_hardanger_atBW.nc')
 
 
 def to_bw2(download=False):
