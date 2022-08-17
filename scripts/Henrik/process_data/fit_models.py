@@ -52,7 +52,7 @@ class HC:
             hc_loc = np.deg2rad(np.stack([hc.lat,hc.lon],axis=-1))
             nk_loc = np.deg2rad(np.stack([norkyst.lat,norkyst.lon],axis=-1))
 
-            tree = BallTree(hc_loc)
+            tree = BallTree(hc_loc,metric="haversine")
             ind = tree.query(nk_loc,return_distance=False)
 
             hc  = hc.isel( point=ind.flatten() )

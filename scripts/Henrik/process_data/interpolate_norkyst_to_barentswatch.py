@@ -56,7 +56,7 @@ def main():
 
             coords = np.deg2rad(np.stack([norkyst.lat,norkyst.lon],axis=-1))
 
-            tree   = BallTree(coords)
+            tree   = BallTree(coords,metric="haversine")
             k_indices = tree.query(bw_coords,return_distance=False).squeeze()
 
         norkyst_timesteps = []
@@ -70,10 +70,10 @@ def main():
                 norkyst = norkyst.stack(point=["Y","X"])
                 norkyst = norkyst.dropna(dim="point",how="all")
 
-                coords = np.deg2rad(np.stack([norkyst.lat,norkyst.lon],axis=-1))
-
-                tree   = BallTree(coords)
-                k_indices = tree.query(bw_coords,return_distance=False).squeeze()
+                # uncomment if you wanna look of each grid individually
+                # coords = np.deg2rad(np.stack([norkyst.lat,norkyst.lon],axis=-1))
+                # tree   = BallTree(coords,metric="haversine")
+                # k_indices = tree.query(bw_coords,return_distance=False).squeeze()
 
                 norkyst = norkyst.isel(point=k_indices)
                 norkyst = norkyst.drop("lat")
