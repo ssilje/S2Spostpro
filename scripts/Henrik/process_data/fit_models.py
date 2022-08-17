@@ -120,7 +120,7 @@ def main():
         o_mean,o_std = xarray_helpers.o_climatology(dat,window=30,cross_validation=True)
         dat = dat - o_mean
         dat = dat / o_std
-        dat = dat + o_mean
+        # dat = dat + o_mean
 
         dat.to_netcdf(co_adj_path)
 
@@ -148,6 +148,6 @@ def main():
         o_mean,o_std = xarray_helpers.o_climatology(dat,window=30,cross_validation=True)
         dat = dat - o_mean
         dat = dat / o_std
-        dat = dat + o_mean
+        # dat = dat + o_mean
 
         dat.to_netcdf(pe_adj_path)
