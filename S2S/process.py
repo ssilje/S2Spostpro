@@ -61,6 +61,7 @@ class Hindcast:
                     t_start,
                     t_end,
                     bounds,
+                    bounds2    = None,
                     high_res   = False,
                     steps      = None,
                     download   = False,
@@ -69,6 +70,9 @@ class Hindcast:
                     period     = None,
                     cross_val  = False
                 ):
+
+        if isinstance(bounds2,type(None)):
+            bounds2=bounds
 
         self.var            = var
         self.t_start        = t_start
@@ -105,7 +109,12 @@ class Hindcast:
                 while self.smaller_than(self.t_end,t_end):
 
                     print('\tLoad hindcast')
-                    self.raw = self.load_data().sortby('time')
+                    self.raw = self.load_data().sortby(['time','lat','lon'])
+
+                    self.raw = self.raw.sel(
+                        lon=slice(*bounds2[:2]),
+                        lat=slice(*bounds2[2:])
+                    )
 
                     print('\tApply 7D running mean along lead time dimension')
                     data = self.raw.rolling(step=7,center=True).mean()
@@ -309,7 +318,7 @@ class Hindcast:
         file.to_netcdf(self.path+filename)
 
     def load(self,filename):
-        return xr.open_dataset(self.path+filename)[self.var]
+        return xr.open_dataset(self.path+filename,engine='netcdf4')[self.var]
 
 class Forecast:
     """
@@ -608,10 +617,8 @@ class Observations:
         self.observations   = observations.sortby('time')
         self.forecast       = forecast
         self.process        = process
-        self.var            = forecast.data.name
+        self.var            = observations.name
         self.path           = config['VALID_DB']
-
-        self.forecast.data  = self.forecast.data.sortby(['time','step'])
 
         self.t_start        = (
                                 observations.time.min().dt.year.values,
@@ -668,6 +675,17 @@ class Observations:
             self.mean = self.mean.rename(self.var)
             self.std  = self.std.rename(self.var)
 
+            try:
+                self.mean = self.mean.groupby('time').mean()
+                self.std = self.std.groupby('time').mean()
+            except ValueError:
+                pass
+
+            try:
+                self.data = self.data.groupby('time').mean()
+            except ValueError:
+                pass
+
             self.data_a = ( self.data - self.mean ) / self.std
 
             self.store(self.data_a,filename_anomalies)
@@ -699,7 +717,7 @@ class Observations:
             if len(c[c>1])>0:
                 init_std = init_std.groupby('time').mean(skipna=True)
             ####################################################################
-
+            print(self.observations,init_mean,init_std)
             init_obs_a = ( self.observations - init_mean ) / init_std
 
             init_obs_a = init_obs_a.reindex(

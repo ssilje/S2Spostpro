@@ -92,6 +92,127 @@ def running_clim(x,index,window=30,cross_validation=False):
 
         return np.stack(mean,axis=-1),np.stack(std,axis=-1)
 
+def running_clim_CV_md(x,index,window=30):
+    """
+    Like running_clim() but leaves out current year in computation for
+    cross validation
+
+    Computes mean and standard deviation over x keeping dim -1 and -2.
+    Dim -1 must be 'dayofyear', with the corresponding days given in index.
+    Dim -2 must be 'year'.
+
+    args:
+        x:      np.array of float, with day of year as index -1 and year as
+                index -2
+        index:  np.array of int, 1-dimensional holding dayofyear corresponding
+                to dim -1 of x
+
+    returns
+        mean:   np.array of float, with day of year as index -1 and year as
+                dim -2
+        std:   np.array of float, with day of year as index -1 and year as
+                dim -2
+
+    dimensions requirements:
+        name            dim
+
+        year            -2
+        dayofyear       -1
+    """
+    mean   = []
+    std    = []
+    mean_d = []
+
+    pad   = window//2
+
+    x     = np.pad(x,pad,mode='wrap')[pad:-pad,:]
+    index = np.pad(index,pad,mode='wrap')
+
+    index[-pad:] += index[-pad-1]
+    index[:pad]  -= index[-pad-1]
+
+    for ii,idx in enumerate(index[pad:-pad]):
+
+        # pool all values that falls within window
+        pool = x[...,np.abs(index-idx)<=pad]
+
+        ymean,ystd,ymean_d = [],[],[]
+        for yy in range(pool.shape[-2]):
+
+            # delete the relevant year from pool (for cross validation)
+            filtered_pool = np.delete(pool,yy,axis=-2)
+
+            if np.isfinite(filtered_pool).sum() > 1:
+                ymean.append(np.nanmean(filtered_pool))
+                ystd.append(np.nanstd(filtered_pool))
+                ymean_d.append(
+                    np.nanmean(
+                        filtered_pool-np.nanmean(filtered_pool)
+                    )
+                )
+            else:
+                ymean.append(np.nan)
+                ystd.append(np.nan)
+                ymean_d.append(np.nan)
+
+        mean.append(np.array(ymean))
+        std.append(np.array(ystd))
+        mean_d = mean.append(np.array(ymean_d))
+
+    return np.stack(mean,axis=-1),np.stack(std,axis=-1),np.stack(mean_d,axis=-1)
+
+def running_clim_o(x,index,window=30):
+    """
+    Like running_clim()
+
+    Computes mean and standard deviation over x keeping dim -1 and -2.
+    Dim -1 must be 'dayofyear', with the corresponding days given in index.
+    Dim -2 must be 'year'.
+
+    args:
+        x:      np.array of float, with day of year as index -1 and year as
+                index -2
+        index:  np.array of int, 1-dimensional holding dayofyear corresponding
+                to dim -1 of x
+
+    returns
+        mean:   np.array of float, with day of year as index -1 and year as
+                dim -2
+        std:   np.array of float, with day of year as index -1 and year as
+                dim -2
+
+    dimensions requirements:
+        name            dim
+
+        year            -2
+        dayofyear       -1
+    """
+    mean   = []
+    std    = []
+
+    pad   = window//2
+
+    x     = np.pad(x,pad,mode='wrap')[pad:-pad,:]
+    index = np.pad(index,pad,mode='wrap')
+
+    index[-pad:] += index[-pad-1]
+    index[:pad]  -= index[-pad-1]
+
+    for ii,idx in enumerate(index[pad:-pad]):
+
+        # pool all values that falls within window
+        pool = x[...,np.abs(index-idx)<=pad]
+
+        if np.isfinite(pool).sum() > 1:
+            mean.append(np.nanmean(pool))
+            std.append(np.nanstd(pool))
+
+        else:
+            mean.append(np.nan)
+            std.append(np.nan)
+
+    return np.stack(mean,axis=-1),np.stack(std,axis=-1)
+
 def running_clim_CV(x,index,window=30):
     """
     Like running_clim() but leaves out current year in computation for
@@ -119,8 +240,8 @@ def running_clim_CV(x,index,window=30):
         year            -2
         dayofyear       -1
     """
-    mean  = []
-    std   = []
+    mean   = []
+    std    = []
 
     pad   = window//2
 
@@ -144,6 +265,7 @@ def running_clim_CV(x,index,window=30):
             if np.isfinite(filtered_pool).sum() > 1:
                 ymean.append(np.nanmean(filtered_pool))
                 ystd.append(np.nanstd(filtered_pool))
+
             else:
                 ymean.append(np.nan)
                 ystd.append(np.nan)
@@ -153,7 +275,7 @@ def running_clim_CV(x,index,window=30):
 
     return np.stack(mean,axis=-1),np.stack(std,axis=-1)
 
-def o_climatology(da,window=30):
+def o_climatology(da,window=30,cross_validation=True,m_d=False):
     """
     Climatology with centered initialization time, using cross validation
     using a 30-day window.
@@ -172,17 +294,45 @@ def o_climatology(da,window=30):
 
     da = unstack_time(da)
 
-    # to all year,dayofyear matrices in da, apply runnning_clim_CV
-    mean,std = xr.apply_ufunc(
-            running_clim_CV, da, da.dayofyear,window,
-            input_core_dims  = [['year','dayofyear'],['dayofyear'],[]],
-            output_core_dims = [['year','dayofyear'],['year','dayofyear']],
-            vectorize=True
-        )
+    if m_d and cross_validation:
+        # to all year,dayofyear matrices in da, apply runnning_clim_CV
+        mean,std,mean_d = xr.apply_ufunc(
+                running_clim_CV_md, da, da.dayofyear,window,
+                input_core_dims  = [['year','dayofyear'],['dayofyear'],[]],
+                output_core_dims = [['year','dayofyear'],['year','dayofyear']],
+                vectorize=True,
+                dask='allowed'
+            )
 
-    # re-assing time dimension to da from year,dayofyear
-    return stack_time(mean),stack_time(std)
+        # re-assing time dimension to da from year,dayofyear
+        return stack_time(mean),stack_time(std),stack_time(mean_d)
 
+    elif not m_d and cross_validation:
+        # to all year,dayofyear matrices in da, apply runnning_clim_CV
+        mean,std = xr.apply_ufunc(
+                running_clim_CV, da, da.dayofyear,window,
+                input_core_dims  = [['year','dayofyear'],['dayofyear'],[]],
+                output_core_dims = [['year','dayofyear'],['year','dayofyear']],
+                vectorize=True,
+                dask='allowed'
+            )
+
+        # re-assing time dimension to da from year,dayofyear
+        return stack_time(mean),stack_time(std)
+
+    else:
+
+        # to all year,dayofyear matrices in da, apply runnning_clim_CV
+        mean,std = xr.apply_ufunc(
+                running_clim_o, da, da.dayofyear,window,
+                input_core_dims  = [['year','dayofyear'],['dayofyear'],[]],
+                output_core_dims = [['dayofyear'],['dayofyear']],
+                vectorize=True,
+                dask='allowed'
+            )
+
+        # re-assing time dimension to da from year,dayofyear
+        return mean,std
 
 def c_climatology(da,window=30,cross_validation=False):
     """
@@ -534,7 +684,7 @@ def at_validation(obs,vt,ddays=1):
                 tolerance  = pd.Timedelta(ddays,'D'),
                 fill_value = np.nan
                 )
-        
+
         o = o.assign_coords(time=o.time-t).rename(time='step')
         out.append(o)
 

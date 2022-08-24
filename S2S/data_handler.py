@@ -222,7 +222,7 @@ class LoadLocal:
         for time in self.load_frequency():
 
             runs   = ['pf','cf'] if control_run else [None]
-            
+
             OK = True
             for n,run in enumerate(runs):
 
@@ -357,7 +357,7 @@ class LoadLocal:
                 data.to_netcdf(self.out_path+self.out_filename)
 
             self.download = False
-
+        
         return xr.open_dataset(self.out_path+self.out_filename)
 
 class ERA5(LoadLocal):
@@ -449,8 +449,10 @@ class BarentsWatch:
 
     def load(self,location,no=400,data_label='DATA'):
 
+        name = None
+
         if location=='all':
-            location = self.all_locs(number_of_observations=no)
+            location,name = self.all_locs(number_of_observations=no)
 
         archive = Archive()
 
@@ -475,13 +477,19 @@ class BarentsWatch:
 
             chunk.append(self.load_barentswatch(self.path[data_label],loc))
 
-        return xr.concat(chunk,'location')
+        out_data = xr.concat(chunk,'location')
+
+        if name:
+            out_data = out_data.assign_coords(loc_name=('location',name))
+
+        return out_data
 
     @staticmethod
     def all_locs(number_of_observations=400):
         with open(config['BW']+'temp_BW.json', 'r') as file:
             data = json.load(file)
             out  = []
+            name = []
             i    = 0
             for loc,dat in data.items():
                 values = np.array(dat['value'],dtype='float32')
@@ -489,6 +497,7 @@ class BarentsWatch:
                     i += 1
                     print(dat['name'])
                     out.append(int(dat['localityNo']))
+                    name.append(dat['name'])
 
             print(
                     '\n...',
@@ -497,7 +506,7 @@ class BarentsWatch:
                     number_of_observations,
                     'observations or more, included\n'
                 )
-        return out
+        return out,name
 
     @staticmethod
     def load_barentswatch(path,location):

@@ -3,6 +3,7 @@ import pandas as pd
 import xarray as xr
 import xskillscore as xs
 import properscoring as ps
+from scipy import stats
 
 import S2S.xarray_helpers as xh
 
@@ -214,6 +215,200 @@ def annual_bootstrap(observations,forecast,score_func,N=10000):
             )
     else:
         return None
+
+def ttest_1samp(a, popmean, dim):
+    """
+    Downloaded from:
+    https://gist.github.com/kuchaale/293d2a16726a5d492be4f5bbae8d9111#file-xa_ttest-py
+    at 3/10/21
+
+    This is a two-sided test for the null hypothesis that the expected value
+    (mean) of a sample of independent observations `a` is equal to the given
+    population mean, `popmean`
+
+    Inspired here: https://github.com/scipy/scipy/blob/v0.19.0/scipy/stats/stats.py#L3769-L3846
+
+    Parameters
+    ----------
+    a : xarray
+        sample observation
+    popmean : float or array_like
+        expected value in null hypothesis, if array_like than it must have the
+        same shape as `a` excluding the axis dimension
+    dim : string
+        dimension along which to compute test
+
+    Returns
+    -------
+    mean : xarray
+        averaged sample along which dimension t-test was computed
+    pvalue : xarray
+        two-tailed p-value
+    """
+    n = a[dim].shape[0]
+    df = n - 1
+    a_mean = a.mean(dim)
+    d = a_mean - popmean
+    v = a.var(dim, ddof=1)
+    denom = xrf.sqrt(v / float(n))
+
+    t = d /denom
+    prob = stats.distributions.t.sf(xr.ufuncs.fabs(t), df) * 2
+    prob_xa = xr.DataArray(prob, coords=a_mean.coords)
+    return a_mean, prob_xa
+
+def _ttest_rel_(a,b,alternative='two-sided'):
+
+    # dealing with nan, keeping only pairs
+    idx = np.logical_and( np.isfinite(a),np.isfinite(b) )
+    if idx.sum()>0:
+        t,p = stats.ttest_rel(a[idx],b[idx],alternative=alternative)
+    else:
+        p = np.nan
+    return p
+
+def ttest_paired(a, b, dim, alternative='two-sided'):
+    """
+    @author: Henrik Auestad
+    xarray wrapper for scipy.stats.ttest_rel
+
+    ****from scipy.stats:
+
+    Calculate the t-test on TWO RELATED samples of scores, a and b.
+
+    This is a test for the null hypothesis that 2 related or repeated
+    samples have identical average (expected) values.
+    ****
+
+    Convetion: b - a, i.e. alternative='greater' null hypothesis states
+    that pop. mean of a is greater or equal to pop. mean of b
+
+    Parameters
+    ----------
+    a : xarray.DataArray
+        sample observations
+    b : xarray.DataArray
+        sample observations
+    dim : list of strings
+        dimension(s) along which to compute test
+
+    ****from scipy.stats:
+
+    alternative : {‘two-sided’, ‘less’, ‘greater’}, optional
+
+    Defines the alternative hypothesis.
+    The following options are available (default is ‘two-sided’):
+
+        ‘two-sided’
+
+        ‘less’: one-sided
+
+        ‘greater’: one-sided
+    ****
+
+    Returns
+    -------
+    dist : xarray
+        distance between sample means (b - a)
+    pvalue : xarray
+        two-tailed p-value
+    """
+
+    dist = b.mean(dim,skipna=True) - a.mean(dim,skipna=True)
+    pvalue = xr.apply_ufunc(
+        _ttest_rel_,
+        a, b,
+        input_core_dims  = [dim,dim],
+        output_core_dims = [[]],
+        vectorize = True,
+        dask      = 'parallelized',
+        kwargs    = {
+            'alternative':alternative
+        }
+    )
+
+    return dist, pvalue
+
+def _ttest_ind_(a,b,alternative='two-sided',equal_var=True):
+
+    t,p = stats.ttest_ind(
+        a[np.isfinite(a)],
+        b[np.isfinite(b)],
+        alternative=alternative,
+        equal_var=equal_var
+    )
+
+    return p
+
+def ttest_upaired(a, b, dim, alternative='two-sided', welch=False):
+    """
+    @author: Henrik Auestad
+    xarray wrapper for scipy.stats.ttest_ind
+
+    ****from scipy.stats:
+
+    Calculate the T-test for the means of two independent samples of scores.
+
+    This is a two-sided test for the null hypothesis that 2 independent
+    samples have identical average (expected) values. This test assumes
+    that the populations have identical variances by default.
+    ****
+
+    Convetion: b - a, i.e. alternative='greater' null hypothesis states
+    that pop. mean of a is greater or equal to pop. mean of b
+
+    Parameters
+    ----------
+    a : xarray.DataArray
+        sample observations
+    b : xarray.DataArray
+        sample observations
+    dim : list of strings
+        dimension(s) along which to compute test
+
+    ****from scipy.stats:
+
+    alternative : {‘two-sided’, ‘less’, ‘greater’}, optional
+
+    Defines the alternative hypothesis.
+    The following options are available (default is ‘two-sided’):
+
+        ‘two-sided’
+
+        ‘less’: one-sided
+
+        ‘greater’: one-sided
+
+    welch : bool, optional
+
+    If True (default), perform a standard independent 2 sample test that
+    assumes equal population variances [1]. If False, perform Welch’s t-test,
+    which does not assume equal population variance [2].
+    ****
+
+    Returns
+    -------
+    dist : xarray
+        distance between sample means (b - a)
+    pvalue : xarray
+        two-tailed p-value
+    """
+
+    dist = b.mean(dim,skipna=True) - a.mean(dim,skipna=True)
+    pvalue = xr.apply_ufunc(
+        _ttest_ind_,
+        a, b,
+        input_core_dims  = [dim,dim],
+        output_core_dims = [[]],
+        vectorize = True,
+        dask      = 'parallelized',
+        kwargs    = {
+            'alternative':alternative,
+            'equal_var':not welch
+        }
+    )
+
+    return dist, pvalue
 
 class SSCORE:
     """

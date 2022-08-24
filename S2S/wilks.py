@@ -41,14 +41,17 @@ def p_FDR(pmap,alpha_FDR):
     returns
         p_FDR     : float
     """
-    pvals = pmap.flatten()
-    pvals.sort()
+    pvals = pmap[np.isfinite(pmap)]
     n = pvals.shape[0]
-    dist = np.arange(1,n+1,1)*alpha_FDR/n - pvals
-    try:
-        return pvals[dist[dist>=0].min()==dist]
-    except ValueError:
+    if n==0:
         return 0.
+    else:
+        pvals.sort()
+        pval = pvals[pvals <= alpha_FDR*np.arange(1,n+1,1)/n]
+        if len(pval)==0:
+            return 0.
+        else:
+            return np.max(pvals[pvals <= alpha_FDR*np.arange(1,n+1,1)/n])
 
 def significans_map(lon,lat,pmap,alpha_FDR):
     """
@@ -71,6 +74,15 @@ def significans_map(lon,lat,pmap,alpha_FDR):
     lat  = lat.flatten()[pmap<=p]
 
     return lon,lat
+
+def xsignificans_map(pmap,alpha_FDR):
+    """
+    @author: Henrik Auestad
+    return a set of coordinates for where the correlation is
+    statistically significant. Xarray version.
+    """
+    p = p_FDR(pmap.values,alpha_FDR)
+    return pmap.where(pmap<=p)
 
 # def ci2p(lower,est,higher):
 #     """

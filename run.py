@@ -37,5 +37,5 @@ from scripts.Henrik.process_data import fit_models
 
 if __name__=='__main__':
 
-    #interpolate_norkyst_to_barentswatch.main()
+    interpolate_norkyst_to_barentswatch.main()
     fit_models.main()

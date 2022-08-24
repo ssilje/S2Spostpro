@@ -71,9 +71,9 @@ def main():
                 norkyst = norkyst.dropna(dim="point",how="all")
 
                 # uncomment if you wanna look of each grid individually
-                # coords = np.deg2rad(np.stack([norkyst.lat,norkyst.lon],axis=-1))
-                # tree   = BallTree(coords,metric="haversine")
-                # k_indices = tree.query(bw_coords,return_distance=False).squeeze()
+                coords = np.deg2rad(np.stack([norkyst.lat,norkyst.lon],axis=-1))
+                tree   = BallTree(coords,metric="haversine")
+                k_indices = tree.query(bw_coords,return_distance=False).squeeze()
 
                 norkyst = norkyst.isel(point=k_indices)
                 norkyst = norkyst.drop("lat")

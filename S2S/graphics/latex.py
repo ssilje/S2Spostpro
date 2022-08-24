@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import warnings
 import matplotlib.colors as mcolors
 import seaborn as sns
+import os
 
 from S2S.local_configuration import config
 
@@ -140,6 +141,11 @@ def set_size(width, fraction=1, subplots=(1, 1)):
     return (fig_width_in, fig_height_in)
 
 def save_figure(fig,path):
+
+    _path_ = '/'.join(path.split('/')[:-1])
+    
+    if not os.path.exists(_path_):
+        os.makedirs(_path_)
 
     with warnings.catch_warnings(record=True) as w:
 

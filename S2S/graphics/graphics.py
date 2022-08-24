@@ -429,8 +429,7 @@ def timeseries(
             ax.plot(
                     o.validation_time.squeeze(),
                     o.squeeze(),
-                    'o',
-                    color='k',
+                    color='grey',
                     ms=0.2,
                     linewidth=0.5,
                     label=olab
@@ -438,6 +437,13 @@ def timeseries(
 
             subtitle = '    MAE:'
             for cn,c in enumerate(cast):
+
+                color = {
+                    'CLIM':'lightgrey',
+                    'EC':'red',
+                    'PERS':'Blue',
+                    'COMBO':'green'
+                }[clabs[cn]]
 
                 c = xh.assign_validation_time(c)
 
@@ -453,19 +459,22 @@ def timeseries(
                 c = c.sel(time=slice(o.time.min(),o.time.max()))
 
                 try:
-                    ax.plot(
-                            c.validation_time.squeeze(),
-                            c.mean('member').squeeze(),
-                            alpha=0.7,
-                            label=clabs[cn],
-                            linewidth=0.5,
-                            zorder=30
-                        )
+                    if not clabs[cn]=='CLIM':
+                        ax.plot(
+                                c.validation_time.squeeze(),
+                                c.mean('member').squeeze(),
+                                color=color,
+                                alpha=0.7,
+                                label=clabs[cn],
+                                linewidth=0.5,
+                                zorder=30
+                            )
                     std = c.std('member').squeeze()
                     ax.fill_between(
                             c.validation_time.squeeze(),
                             c.mean('member').squeeze()+std,
                             c.mean('member').squeeze()-std,
+                            color=color,
                             alpha=0.3,
                             zorder=30
                         )
@@ -478,6 +487,7 @@ def timeseries(
                     ax.plot(
                             c.validation_time.squeeze(),
                             c.squeeze(),
+                            color=color,
                             alpha=0.7,
                             label=clabs[cn],
                             linewidth=0.5,
@@ -499,7 +509,7 @@ def timeseries(
             ax.legend()
 
         fig.suptitle(str(name_from_loc(loc.values))+' '+title)
-        save_fig(fig,fname)
+        latex.save_figure(fig,filename+'_'+str(name_from_loc(loc.values)))
 
 def point_map(da,c='r',poi=None,bw_special=False,boxes=None,bw_poi=None):
 

@@ -157,6 +157,11 @@ def persistence(init_value,observations,window=30):
     rho = xh.stack_time(rho)
 
     try:
+        rho = rho.groupby('time').mean()
+    except ValueError:
+        pass
+
+    try:
         rho = rho.drop('validation_time')
     except (AttributeError, ValueError):
         pass
@@ -170,7 +175,8 @@ def combo(
             window=30,
             lim=1,
             sub=np.nan,
-            cluster_name=None
+            cluster_name=None,
+            adj_amplitude=False
         ):
     """
     Input must be anomalies.
@@ -181,7 +187,7 @@ def combo(
     else:
         icd = ['year','dayofyear']
 
-    print('\t performing models.persistence()')
+    print('\t performing models.combo()')
     ds = xr.merge(
                     [
                         init_value.rename('iv'),
@@ -226,7 +232,25 @@ def combo(
     alpha = xh.stack_time(alpha)
     beta  = xh.stack_time(beta)
 
-    return alpha * init_value + beta * model.mean('member')
+    try:
+        alpha = alpha.groupby('time').mean()
+    except ValueError:
+        pass
+    try:
+        beta = beta.groupby('time').mean()
+    except ValueError:
+        pass
+
+    out = alpha * init_value + beta * model.mean('member')
+
+    if adj_amplitude:
+        o_mean,o_std = xh.o_climatology(out,window=30,cross_validation=True)
+        out = out - o_mean
+        out = out / o_std
+        out = out + o_mean
+        return out
+    else:
+        return out
 
 ################################################################################
 ########################### NumPy routines #####################################
