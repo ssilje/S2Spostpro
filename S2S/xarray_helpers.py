@@ -264,7 +264,7 @@ def running_clim_CV(x,index,window=30):
 
             if np.isfinite(filtered_pool).sum() > 1:
                 ymean.append(np.nanmean(filtered_pool))
-                ystd.append(np.nanstd(filtered_pool))
+                ystd.append(np.nanstd(filtered_pool,ddof=1))
 
             else:
                 ymean.append(np.nan)
