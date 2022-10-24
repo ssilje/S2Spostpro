@@ -168,6 +168,47 @@ def persistence(init_value,observations,window=30):
 
     return rho * init_value
 
+def persistence_scaled(init_value,observations,window=30):
+    """
+    Input must be anomlies.
+    """
+
+    print('\tmodels.persistence()')
+    ds = xr.merge(
+                    [
+                        init_value.rename('iv'),
+                        observations.rename('o')
+                ],join='inner',compat='override'
+            )
+
+    ds  = xh.unstack_time(ds)
+
+    rho = xr.apply_ufunc(
+                correlation_CV_scaled,ds.iv,ds.o,ds.dayofyear,window,
+                input_core_dims  = [
+                                    ['year','dayofyear'],
+                                    ['year','dayofyear'],
+                                    ['dayofyear'],
+                                    []
+                                ],
+                output_core_dims = [['year','dayofyear']],
+                vectorize=True
+    )
+
+    rho = xh.stack_time(rho)
+
+    try:
+        rho = rho.groupby('time').mean()
+    except ValueError:
+        pass
+
+    try:
+        rho = rho.drop('validation_time')
+    except (AttributeError, ValueError):
+        pass
+
+    return rho * init_value
+
 def combo(
             init_value,
             model,
@@ -325,6 +366,83 @@ def correlation_CV(x,y,index,window=30):
             yrho.append(r)
 
         rho.append(np.array(yrho))
+
+    return np.stack(rho,axis=-1)
+
+def correlation_CV_scaled(x,y,index,window=30):
+    """
+    Computes correlation of x against y (rho), keeping dim -1 and -2.
+    Dim -1 must be 'dayofyear', with the corresponding days given in index.
+    Dim -2 must be 'year'.
+
+    args:
+        x:      np.array of float, with day of year as index -1 and year as
+                index -2
+        index:  np.array of int, 1-dimensional holding dayofyear corresponding
+                to dim -1 of x
+
+    returns
+        rho:   np.array of float, with day of year as index -1 and year as
+                dim -2
+
+    dimensions requirements:
+        name            dim
+
+        year            -2
+        dayofyear       -1
+
+    Returns 2 dimensional array (year,dayofyear)
+    """
+    rho   = []
+
+    pad   = window//2
+
+    if len(x.shape)==2:
+        x     = np.pad(x,pad,mode='wrap')[pad:-pad,:]
+        y     = np.pad(y,pad,mode='wrap')[pad:-pad,:]
+
+    if len(x.shape)==3:
+        x     = np.pad(x,pad,mode='wrap')[pad:-pad,pad:-pad,:]
+        y     = np.pad(y,pad,mode='wrap')[pad:-pad,pad:-pad,:]
+
+    index = np.pad(index,pad,mode='wrap')
+
+    index[-pad:] += index[-pad-1]
+    index[:pad]  -= index[-pad-1]
+
+    for ii,idx in enumerate(index[pad:-pad]):
+
+        # pool all values that falls within window
+        xpool = x[...,np.abs(index-idx)<=pad]
+        ypool = y[...,np.abs(index-idx)<=pad]
+
+        yrho = []
+        for yy in range(xpool.shape[-2]):
+
+            # delete the relevant year from pool (for cross validation)
+            filtered_xpool = np.delete(xpool,yy,axis=-2).flatten()
+            filtered_ypool = np.delete(ypool,yy,axis=-2).flatten()
+
+            idx_bool = np.logical_and(
+                                np.isfinite(filtered_xpool),
+                                np.isfinite(filtered_ypool)
+                            )
+            if idx_bool.sum()<2:
+                r = np.nan
+
+            else:
+                r,p = stats.pearsonr(
+                                    filtered_xpool[idx_bool],
+                                    filtered_ypool[idx_bool]
+                                )
+
+            yrho.append(r)
+
+        _yrho_ = np.array(yrho)
+        yrho_m = _yrho_.mean()
+        yrho_s = _yrho_.std()
+
+        rho.append( ( (_yrho_ - yrho_m)/yrho_s ) + yrho_m )
 
     return np.stack(rho,axis=-1)
 

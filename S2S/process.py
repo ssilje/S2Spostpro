@@ -85,9 +85,9 @@ class Hindcast:
         self.path           = config['VALID_DB']
         self.period         = period
         self.cross_val      = cross_val #new attribute
-
+        
         filename_absolute = self.filename_func('absolute')
-
+        
         if self.process or not os.path.exists(self.path+filename_absolute):
 
             print('Process hindcast')
