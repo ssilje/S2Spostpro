@@ -7,6 +7,7 @@ from scripts.Henrik import temp3m_prep_hindcast
 if __name__=='__main__':
 
     temp3m_analysis.main()
+    temp3m_prep_hindcast.main()
 
     # interpolate_norkyst_to_barentswatch.main()
     # fit_models.main()

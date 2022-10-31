@@ -85,9 +85,9 @@ class Hindcast:
         self.path           = config['VALID_DB']
         self.period         = period
         self.cross_val      = cross_val #new attribute
-        
+
         filename_absolute = self.filename_func('absolute')
-        
+
         if self.process or not os.path.exists(self.path+filename_absolute):
 
             print('Process hindcast')
@@ -701,6 +701,18 @@ class Observations:
         if self.process or not os.path.exists(self.path+filename_init):
 
             print('\tGather observations at model initalization')
+
+            # This is a pragmatic fix
+            fc_end_time = (forecast.data.time + forecast.data.step).max()
+            _observations_ = self.observations.where(
+                np.logical_and(
+                    self.observations.time <= fc_end_time,
+                    self.observations.time >= forecast.data.time.min()
+                ),drop=True
+            ).sortby('time')
+            # # #
+
+
             init_mean,init_std = xh.o_climatology(self.observations)
 
             init_mean = init_mean.rename(self.var)
@@ -718,13 +730,31 @@ class Observations:
                 init_std = init_std.groupby('time').mean(skipna=True)
             ####################################################################
             print(self.observations,init_mean,init_std)
+
+            def tp(tp_data):
+                for year in np.unique(tp_data.time.dt.year.values):
+                    print(year,np.isfinite(tp_data.where(tp_data.time.dt.year==year).values).sum())
+
+            print('observations')
+            tp(self.observations)
+            print('mean')
+            tp(init_mean)
+            print('std')
+            tp(init_std)
+
             init_obs_a = ( self.observations - init_mean ) / init_std
+
+            print('init_obs_a')
+            tp(init_obs_a)
 
             init_obs_a = init_obs_a.reindex(
                             {'time':forecast.data.time},
                             method='pad',
                             tolerance='7D'
                         ).broadcast_like(self.data)
+
+            print('init_obs_a_2')
+            tp(init_obs_a)
 
             self.store(init_obs_a,filename_init)
 

@@ -77,12 +77,14 @@ def main():
     path    = "/projects/NS9853K/DATA/tmp/"
     nk_path = path + "norkyst_at_locations_hardanger_stationary_kindex.nc"
 
+    print("load norkyst data")
     with xr.open_dataarray(nk_path) as norkyst:
         norkyst = norkyst.sortby("time")
 
-    print('Norkyst: roll')
+    print("running mean of norkyst data")
     norkyst = norkyst.rolling(time=7,center=True).mean()
 
+    print("load hindcast")
     hindcast = HC()
 
     print('Norkyst: process')
@@ -90,7 +92,7 @@ def main():
         name='norkyst_at_locations_hardanger_stacked_and_processed',
         observations=norkyst,
         forecast=hindcast,
-        process=True
+        process=False
     )
 
     # COMBO MODEL

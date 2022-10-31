@@ -104,3 +104,53 @@ def main():
     # PERSISTENCE
     pe_path = path + "pers_at_locations_hardanger.nc"
     pe_adj_path = path + "pers_at_locations_hardanger_adjusted.nc"
+
+    out = "model - leadtime: "
+    for step in observations.data_a.step.dt.days.values:
+        out += str(step,2) + "   "
+
+    print(out)
+
+    out = "std observations: "
+    for step in observations.data_a.step.values:
+        out += str(round(np.nanstd(observations.data_a.sel(step=step)),2)) + " "
+
+    print(out)
+
+    out = "std hindcast:     "
+    for step in observations.data_a.step.values:
+        out += str(round(np.nanstd(hindcast.data_a.mean("member").sel(step=step)),2)) + " "
+
+    print(out)
+
+    with xr.open_dataarray(pe_path) as pers:
+
+        out = "std pers:         "
+        for step in observations.data_a.step.values:
+            out += str(round(np.nanstd(pers.sel(step=step)),2)) + " "
+
+    print(out)
+
+    with xr.open_dataarray(pe_adj_path) as pers:
+
+        out = "std pers adj:     "
+        for step in observations.data_a.step.values:
+            out += str(round(np.nanstd(pers.sel(step=step)),2)) + " "
+
+    print(out)
+
+    with xr.open_dataarray(co_path) as combo:
+
+        out = "std combo:        "
+        for step in observations.data_a.step.values:
+            out += str(round(np.nanstd(combo.sel(step=step)),2)) + " "
+
+    print(out)
+
+    with xr.open_dataarray(co_adj_path) as combo:
+
+        out = "std combo adj:    "
+        for step in observations.data_a.step.values:
+            out += str(round(np.nanstd(combo.sel(step=step)),2)) + " "
+
+    print(out)

@@ -1,4 +1,4 @@
-from S2S import models
+from S2S import models, xarray_helpers
 from datetime import datetime
 import numpy  as np
 import xarray as xr
@@ -71,13 +71,15 @@ def main():
         )
         combo.to_netcdf(co_path)
 
-    co_path = tmp_path + "temp3_combo_scaled_at_point_location.nc"
+    cos_path = tmp_path + "temp3_combo_scaled_at_point_location.nc"
 
-    if not os.path.exists(co_path):
+    if not os.path.exists(cos_path):
 
-        combo = models.combo_scaled(
-            init_value      = observations.init_a,
-            model           = hindcast,
-            observations    = observations.data_a
-        )
-        combo.to_netcdf(co_path)
+        with xr.open_dataarray(co_path) as combo:
+
+            mean_,std_ = xarray_helpers.o_climatology(combo,window=30,cross_validation=True)
+            combo_scaled = ( (combo-mean_)/std_ ) + mean_
+            combo_scaled.to_netcdf(cos_path)
+
+    with xr.open_dataarray(cos_path) as data:
+        print(data.dropna(dim='time',how='all'))

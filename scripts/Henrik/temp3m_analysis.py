@@ -57,3 +57,6 @@ def main():
         pers.to_netcdf(pe_path)
 
     print('Finished')
+
+    with xr.open_dataarray(tmp_path + "temp3m_pers.nc") as data:
+        print(data.dropna(dim='time',how='all'))
