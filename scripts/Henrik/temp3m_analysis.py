@@ -44,19 +44,25 @@ def main():
     )
 
     # PERSISTENCE
-    pe_path = tmp_path + "temp3m_pers.nc"
-    if not os.path.exists(pe_path):
-
-        pers = models.persistence(observations.init_a,observations.data_a,window=30)
-        pers.to_netcdf(pe_path)
-
     pe_path = tmp_path + "temp3m_pers_scaled.nc"
     if not os.path.exists(pe_path):
 
         pers = models.persistence_scaled(observations.init_a,observations.data_a,window=30)
         pers.to_netcdf(pe_path)
 
-    print('Finished')
 
-    with xr.open_dataarray(tmp_path + "temp3m_pers.nc") as data:
-        print(data.dropna(dim='time',how='all'))
+    pe_path = tmp_path + "temp3m_pers.nc"
+    if not os.path.exists(pe_path):
+
+        pers = models.persistence(observations.init_a,observations.data_a,window=30)
+        pers.to_netcdf(pe_path)
+
+    pe_path = tmp_path + "temp3m_pers_scaled0.nc"
+    if not os.path.exists(pe_path):
+
+        with xr.open_dataarray(tmp_path + "temp3m_pers.nc") as pers:
+            mean_,std_ = xarray_helpers.o_climatology(
+                pers,window=30,cross_validation=True
+            )
+            pers_scaled = ( (pers-mean_)/std_ ) + mean_
+            pers_scaled.to_netcdf(pe_path)

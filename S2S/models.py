@@ -439,10 +439,9 @@ def correlation_CV_scaled(x,y,index,window=30):
             yrho.append(r)
 
         _yrho_ = np.array(yrho)
-        yrho_m = _yrho_.mean()
-        yrho_s = _yrho_.std()
+        _yrho_ = _yrho_ + (1 - _yrho_.max())
 
-        rho.append( ( (_yrho_ - yrho_m)/yrho_s ) + yrho_m )
+        rho.append( _yrho_  )
 
     return np.stack(rho,axis=-1)
 

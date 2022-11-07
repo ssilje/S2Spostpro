@@ -7,6 +7,10 @@ from glob import glob
 import pandas as pd
 from sklearn.neighbors import BallTree
 from S2S.process       import Hindcast, Observations
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import cartopy.crs as ccrs
+import cmocean
 
 def main():
 
@@ -27,11 +31,66 @@ def main():
             cross_val=True,
             period=[obs_time1,obs_time2]
         )
+    # cap=1.
+    # hindcast = hindcast.data.transpose('lat','lon',...).isel(member=0)
+    # hindcast = hindcast.where(hindcast.time.dt.year==2006,drop=True)
+    # hindcast = hindcast.isel(time=np.arange(0,101,101//12))
+    # # hindcast = hindcast.interp(
+    # #     {'lon':hindcast.lon.values-0.25,'lat':hindcast.lat.values-0.25}
+    # # )
+    # hindcast = hindcast.stack(point=['lon','lat'])
+    # hindcast = hindcast.where(hindcast>cap)
+    #
+    # for time in hindcast.time:
+    #
+    #     fig, axs = plt.subplots(
+    #         nrows=3,
+    #         ncols=2,
+    #         subplot_kw={'projection': ccrs.PlateCarree()},
+    #         figsize=(20,14)
+    #     )
+    #
+    #     bins = np.arange(cap,10.5,0.5)
+    #     cmap = plt.get_cmap('viridis', len(bins))
+    #     norm = mpl.colors.BoundaryNorm(boundaries=bins, ncolors=cmap.N )
+    #
+    #     for ax,step in zip(axs.flatten(),hindcast.step):
+    #
+    #         cs = ax.scatter(
+    #             x=hindcast.lon,
+    #             y=hindcast.lat,
+    #             c=hindcast.sel(time=time,step=step),
+    #             transform=ccrs.PlateCarree(),
+    #             cmap=cmap,
+    #             norm=norm,
+    #             s=10,
+    #             edgecolor='k',
+    #             linewidth=0.5
+    #         )
+    #         ax.coastlines()
+    #         ax.set_title('lead time: '+str(step.dt.days.values))
+    #
+    #     fig.colorbar(cs,ax=axs.ravel().tolist())
+    #     plt.savefig(
+    #         '/nird/home/heau/fig/hindcast_init_'+\
+    #         pd.to_datetime( str( time.values ) ).strftime('%d-%m-%Y')+\
+    #         '_capped'+str(int(cap*10))+'.png',
+    #         dpi=250
+    #     )
+    #     plt.close()
+    #
+    #
+    #
+    # exit()
+
 
     hc = hindcast
     hindcast = hindcast.data_a
+    hindcast = hindcast.where(
+        hindcast.isel(member=0).sel(time='11/02/2006') > 1
+    )
     hindcast = hindcast.stack(point=['lat','lon']).dropna(dim='point',how='all')
-
+    
     with xr.open_dataarray(obs_path) as obs:
         obs = obs
         location = obs.location

@@ -58,7 +58,7 @@ def running_clim(x,index,window=30,cross_validation=False):
             # pool all values that falls within window
             pool = x[...,np.abs(index-idx)<=pad]
 
-            if np.isfinite(pool).sum() > 1:
+            if np.isfinite(pool).sum() > 5:
                 mean.append(np.full_like(pool[0][...,0],np.nanmean(pool)))
                 std.append(np.full_like(pool[0][...,0],np.nanstd(pool)))
             else:
@@ -80,7 +80,7 @@ def running_clim(x,index,window=30,cross_validation=False):
                 # delete the relevant year from pool (for cross validation)
                 filtered_pool = np.delete(pool,yy,axis=-2)
 
-                if np.isfinite(filtered_pool).sum() > 1:
+                if np.isfinite(filtered_pool).sum() > 5:
                     ymean.append(np.nanmean(filtered_pool))
                     ystd.append(np.nanstd(filtered_pool))
                 else:
