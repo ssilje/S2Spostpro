@@ -228,11 +228,16 @@ def combo(
     else:
         icd = ['year','dayofyear']
 
+    try:
+        model = model.mean('member')
+    except ValueError:
+        pass
+
     print('\t performing models.combo()')
     ds = xr.merge(
                     [
                         init_value.rename('iv'),
-                        model.rename('mod').mean('member'),
+                        model.rename('mod'),
                         observations.rename('o')
                 ],join='inner',compat='override'
             )
@@ -282,7 +287,7 @@ def combo(
     except ValueError:
         pass
 
-    out = alpha * init_value + beta * model.mean('member')
+    out = alpha * init_value + beta * model
 
     if adj_amplitude:
         o_mean,o_std = xh.o_climatology(out,window=30,cross_validation=True)

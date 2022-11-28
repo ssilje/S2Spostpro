@@ -1,0 +1,29 @@
+3m temperature scripts and modifications of model
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# Committer: Henrik Auestad <heau@confer.nird.confer-ns9853k.svc.cluster.local>
+#
+# On branch scripts_update
+# Your branch is up to date with 'origin/scripts_update'.
+#
+# Changes to be committed:
+#	modified:   S2S/models.py
+#	modified:   S2S/process.py
+#	modified:   run.py
+#	new file:   scripts/Henrik/temp3m_analysis.py
+#	new file:   scripts/Henrik/temp3m_prep_hindcast.py
+#
+# Changes not staged for commit:
+#	deleted:    data/BW/BW_temperature/BW_temperature_export.csv
+#	deleted:    data/BW/BW_temperature/README.md
+#	deleted:    data/BW/BW_temperature/metadata_BW_sites.json
+#	deleted:    data/BW/BW_temperature/temp_BW.json
+#	deleted:    data/BW/sites.json
+#	deleted:    data/BW/sites_testing.json
+#	modified:   scripts/Henrik/process_data/compare_timeseries.py
+#	modified:   scripts/Henrik/process_data/fit_models.py
+#
+# Untracked files:
+#	figures_3m/
+#

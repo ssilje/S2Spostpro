@@ -193,7 +193,8 @@ class Hindcast:
             print('\tCompute model climatology')
             self.mean,self.std = xh.c_climatology(
                                     self.data,
-                                    cross_validation = self.cross_val #new
+                                    cross_validation = self.cross_val,
+                                    window=20
                                                 )
 
             self.mean = self.mean.rename(self.var)
@@ -670,7 +671,7 @@ class Observations:
         if self.process or not os.path.exists(self.path+filename_anomalies):
 
             print('\tCompute climatology')
-            self.mean,self.std = xh.o_climatology(self.data)
+            self.mean,self.std = xh.o_climatology(self.data,window=20)
 
             self.mean = self.mean.rename(self.var)
             self.std  = self.std.rename(self.var)
@@ -713,7 +714,7 @@ class Observations:
             # # #
 
 
-            init_mean,init_std = xh.o_climatology(self.observations)
+            init_mean,init_std = xh.o_climatology(self.observations,window=20)
 
             init_mean = init_mean.rename(self.var)
             init_std  = init_std.rename(self.var)

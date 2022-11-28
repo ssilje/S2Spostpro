@@ -37,30 +37,23 @@ def main():
         obs = obs.temperature
 
     observations = Observations(
-        name='temp3m_norkyst',
+        name='temp3m_norkyst_20',
         observations=obs,
         forecast=hindcast,
         process=False
     )
 
     # PERSISTENCE
-    pe_path = tmp_path + "temp3m_pers_scaled.nc"
-    if not os.path.exists(pe_path):
-
-        pers = models.persistence_scaled(observations.init_a,observations.data_a,window=30)
-        pers.to_netcdf(pe_path)
-
-
-    pe_path = tmp_path + "temp3m_pers.nc"
+    pe_path = tmp_path + "temp3m_pers_20.nc"
     if not os.path.exists(pe_path):
 
         pers = models.persistence(observations.init_a,observations.data_a,window=30)
         pers.to_netcdf(pe_path)
 
-    pe_path = tmp_path + "temp3m_pers_scaled0.nc"
+    pe_path = tmp_path + "temp3m_pers_scaled0_20.nc"
     if not os.path.exists(pe_path):
 
-        with xr.open_dataarray(tmp_path + "temp3m_pers.nc") as pers:
+        with xr.open_dataarray(tmp_path + "temp3m_pers_20.nc") as pers:
             mean_,std_ = xarray_helpers.o_climatology(
                 pers,window=30,cross_validation=True
             )

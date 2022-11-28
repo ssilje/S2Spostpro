@@ -83,14 +83,75 @@ def main():
     #
     # exit()
 
+    # load mask
+    maskpath =\
+        '/projects/NS9853K/DATA/S2S/MARS/hindcast/ECMWF/sfc/lsm_CY47R1_05x05_2021-03-18_cf.grb'
+
+    with xr.open_dataarray(maskpath) as landmask:
+        landmask=landmask.sortby(['latitude','longitude'])
+        landmask=landmask.rename(dict(latitude='lat',longitude='lon'))
+        landmask=landmask.sel(lon=slice(0,28),lat=slice(55,75))
 
     hc = hindcast
+    _std_ = hindcast.std
     hindcast = hindcast.data_a
-    hindcast = hindcast.where(
-        hindcast.isel(member=0).sel(time='11/02/2006') > 1
-    )
-    hindcast = hindcast.stack(point=['lat','lon']).dropna(dim='point',how='all')
-    
+    # hindcast = hindcast.where(
+    #     (_std_.max('time')-_std_.min('time')).isel(step=4) > 0.3
+    # )
+    hindcast = hindcast.where(landmask==0,drop=True)
+    print('nans after condition:',np.isnan(hindcast).sum().values)
+    hindcast = hindcast.stack(point=['lat','lon'])
+
+    print('number of points before filter:',len(hindcast.point))
+    hindcast = hindcast.dropna(dim='point',how='all')
+    hindcast = hindcast.dropna(dim='time',how='all')
+    hindcast = hindcast.dropna(dim='step',how='all')
+
+    print('number of points after filter:',len(hindcast.point))
+    print('nans after filtering:',np.isnan(hindcast).sum().values)
+    print('finities after filtering:',np.isfinite(hindcast).sum().values)
+
+    # nans = np.isnan(hindcast).sum(['time'])
+    # print(nans.max('point'))
+    # exit()
+    # time = hindcast.time.isel(time=100)
+    # fig, axs = plt.subplots(
+    #     nrows=3,
+    #     ncols=2,
+    #     subplot_kw={'projection': ccrs.PlateCarree()},
+    #     figsize=(20,14)
+    # )
+    #
+    # for ax,step in zip(axs.flatten(),hindcast.step):
+    #
+    #     cs = ax.scatter(
+    #         x=hindcast.lon,
+    #         y=hindcast.lat,
+    #         c=hindcast.sel(time=time,step=step).mean('member'),
+    #         transform=ccrs.PlateCarree(),
+    #         # cmap=cmap,
+    #         # norm=norm,
+    #         s=12,
+    #         # edgecolor='k',
+    #         linewidth=0.5
+    #     )
+    #     ax.coastlines()
+    #     ax.set_title('lead time: '+str(step.dt.days.values))
+    #
+    # fig.colorbar(cs,ax=axs.ravel().tolist())
+    # plt.savefig(
+    #     '/nird/home/heau/fig/double_check_masking.png',
+    #     dpi=250
+    # )
+    # plt.close()
+
+
+    # hindcast = hindcast.dropna(dim='step',how='all')
+    # hindcast = hindcast.dropna(dim='point',how='all')
+
+    # print(hindcast)
+    # print(np.isfinite(hindcast).sum(['time','step']).values)
+
     with xr.open_dataarray(obs_path) as obs:
         obs = obs
         location = obs.location
@@ -109,36 +170,32 @@ def main():
     hindcast = hindcast.assign_coords(point=location.values)
     hindcast = hindcast.rename({'point':'location'})
 
-    hindcast.to_netcdf(tmp_path+'temp3_hindcast_at_point_location.nc')
-    print(hindcast)
+    hindcast.to_netcdf(tmp_path+'temp3_hindcast_at_point_location_20.nc')
 
     observations = Observations(
-        name='temp3m_norkyst',
+        name='temp3m_norkyst_20',
         observations=obs,
         forecast=hc,
         process=False
     )
 
-    co_path = tmp_path + "temp3_combo_at_point_location.nc"
+    co_path = tmp_path + "temp3_combo_at_point_location_20.nc"
 
-    if not os.path.exists(co_path):
+    if not os.path.exists(co_path) or True:
 
         combo = models.combo(
             init_value      = observations.init_a,
-            model           = hindcast,
+            model           = hindcast.mean('member'),
             observations    = observations.data_a
         )
         combo.to_netcdf(co_path)
 
-    cos_path = tmp_path + "temp3_combo_scaled_at_point_location.nc"
+    cos_path = tmp_path + "temp3_combo_scaled_at_point_location_20.nc"
 
-    if not os.path.exists(cos_path):
+    if not os.path.exists(cos_path) or True:
 
         with xr.open_dataarray(co_path) as combo:
 
             mean_,std_ = xarray_helpers.o_climatology(combo,window=30,cross_validation=True)
             combo_scaled = ( (combo-mean_)/std_ ) + mean_
             combo_scaled.to_netcdf(cos_path)
-
-    with xr.open_dataarray(cos_path) as data:
-        print(data.dropna(dim='time',how='all'))
